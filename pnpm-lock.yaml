@@ -269,14 +269,14 @@ importers:
   apps/example:
     dependencies:
       '@blendsdk/fluentui-upload':
-        specifier: ^0.1.0
-        version: 0.1.0(@fluentui/react-components@9.75.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(scheduler@0.28.0))(@fluentui/react-icons@2.0.344(react@19.3.1))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7)
+        specifier: ^0.2.0
+        version: link:../../packages/fluentui-upload
       '@blendsdk/upload-client':
-        specifier: ^0.1.0
-        version: 0.1.0(zod@4.6.7)
+        specifier: ^0.2.0
+        version: link:../../packages/upload-client
       '@blendsdk/upload-core':
-        specifier: ^0.1.0
-        version: 0.1.0(zod@4.6.7)
+        specifier: ^0.2.0
+        version: link:../../packages/upload-core
       '@fluentui/react-components':
         specifier: ^9.75.0
         version: 9.75.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(scheduler@0.28.0)
@@ -649,29 +649,10 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@blendsdk/fluentui-upload@0.1.0':
-    resolution: {integrity: sha512-RRFYQuXF+tJ8hbQ4r4AcFmtOQu8tY3oLuStpoQ6Y9lQzOI5OcQWLC0K5tuQV+la/lVKRulJB6n7LtOxDC8AvPg==}
-    engines: {node: '>=22.0.0'}
-    peerDependencies:
-      '@fluentui/react-components': ^9.75.0
-      '@fluentui/react-icons': ^2.0.0
-      react: ^19.0.0
-      react-dom: ^19.0.0
-
   '@blendsdk/lockstep@1.4.1':
     resolution: {integrity: sha512-I20ZSZM/AVA7lvJZWAnC8PsJnOBV1QNptWiN56hoqlktDKWT4GR/wVtgM259lwI8eMVafjGFvDOt3x1QGXAuwg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
-
-  '@blendsdk/upload-client@0.1.0':
-    resolution: {integrity: sha512-sC6fC9s13bfQ5YdEa0f1E5UH2luKV0API6Ah6T1iKdoC6xm5fUbO6XzaXYMH6O4inSGLjL5skprWxUxfke3VXA==}
-    engines: {node: '>=22.0.0'}
-
-  '@blendsdk/upload-core@0.1.0':
-    resolution: {integrity: sha512-ujM8aAboVfR4YlJumAPSOwsqvY0AQ4FJLOiSaz32FhcKPCRHdzXHuolRKQxj1VFQIxzKyX5VWIGFbYHwzgEDaA==}
-    engines: {node: '>=22.0.0'}
-    peerDependencies:
-      zod: ^4.4.3
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
@@ -4149,19 +4130,6 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@blendsdk/fluentui-upload@0.1.0(@fluentui/react-components@9.75.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(scheduler@0.28.0))(@fluentui/react-icons@2.0.344(react@19.3.1))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7)':
-    dependencies:
-      '@blendsdk/upload-client': 0.1.0(zod@4.6.7)
-      '@blendsdk/upload-core': 0.1.0(zod@4.6.7)
-      '@fluentui/react-components': 9.75.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(scheduler@0.28.0)
-      '@fluentui/react-icons': 2.0.344(react@19.3.1)
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
-      react-dropzone: 20.1.4(@types/react@19.3.0)(react@19.3.1)
-    transitivePeerDependencies:
-      - '@types/react'
-      - zod
-
   '@blendsdk/lockstep@1.4.1(@aws-sdk/credential-provider-node@3.972.90)(@smithy/signature-v4@5.7.4)(zod@4.6.7)':
     dependencies:
       npm-check-updates: 22.2.9
@@ -4174,17 +4142,6 @@ snapshots:
       - '@smithy/signature-v4'
       - ws
       - zod
-
-  '@blendsdk/upload-client@0.1.0(zod@4.6.7)':
-    dependencies:
-      '@blendsdk/upload-core': 0.1.0(zod@4.6.7)
-      tus-js-client: 4.3.1
-    transitivePeerDependencies:
-      - zod
-
-  '@blendsdk/upload-core@0.1.0(zod@4.6.7)':
-    dependencies:
-      zod: 4.6.7
 
   '@borewit/text-codec@0.2.2': {}
 

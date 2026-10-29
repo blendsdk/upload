@@ -12,9 +12,9 @@
     "clean": "rm -fR dist"
   },
   "dependencies": {
-    "@blendsdk/fluentui-upload": "^0.1.0",
-    "@blendsdk/upload-client": "^0.1.0",
-    "@blendsdk/upload-core": "^0.1.0",
+    "@blendsdk/fluentui-upload": "^0.2.0",
+    "@blendsdk/upload-client": "^0.2.0",
+    "@blendsdk/upload-core": "^0.2.0",
     "@fluentui/react-components": "^9.75.0",
     "@fluentui/react-icons": "^2.0.344",
     "react": "^19.3.1",
