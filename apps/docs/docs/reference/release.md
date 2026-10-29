@@ -21,9 +21,9 @@ Writes per-package `CHANGELOG.md` files and the root `RELEASE_NOTES.md`. The gen
 ## Publish
 
 ```bash
-pnpm lockstep:publish:latest
-pnpm lockstep:publish:next
-pnpm lockstep:publish:beta
+pnpm publish:latest
+pnpm publish:next
+pnpm publish:beta
 ```
 
 `next` and `beta` use `--tag-mode exact`; `latest` is published only from `main`. Every publish uses `--preflight`, which dry-runs all four packages before the first real publish.

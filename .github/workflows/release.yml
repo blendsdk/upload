@@ -163,15 +163,11 @@ jobs:
           NPM_CONFIG_IGNORE_SCRIPTS: 'true'
         run: |
           TAG="${{ inputs.dist_tag }}"
-          MODE="--tag-mode branch"
+          MODE=""
           if [ "$TAG" != "latest" ]; then
-            MODE="--tag-mode exact"
+            MODE="--exact"
           fi
-          pnpm exec lockstep publish \
-            --tag "$TAG" \
-            $MODE \
-            --preflight \
-            --provenance
+          node scripts/publish.mjs "$TAG" $MODE --preflight --provenance
 
       - name: Push release commit and tags
         run: |

@@ -29,9 +29,9 @@
     "lockstep:version:minor": "lockstep version --type minor --ci --no-changelog --fail-on-no-changes",
     "lockstep:version:major": "lockstep version --type major --ci --no-changelog --fail-on-no-changes",
     "lockstep:changelog": "lockstep changelog",
-    "lockstep:publish:latest": "lockstep publish --tag latest --preflight",
-    "lockstep:publish:next": "lockstep publish --tag next --tag-mode exact --preflight",
-    "lockstep:publish:beta": "lockstep publish --tag beta --tag-mode exact --preflight"
+    "publish:latest": "node scripts/publish.mjs latest --preflight",
+    "publish:next": "node scripts/publish.mjs next --exact --preflight",
+    "publish:beta": "node scripts/publish.mjs beta --exact --preflight"
   },
   "devDependencies": {
     "@blendsdk/lockstep": "^1.4.1",
