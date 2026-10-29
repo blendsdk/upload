@@ -41,7 +41,10 @@ The full verification command is:
 ```bash
 pnpm verify
 pnpm test:e2e
+pnpm test:s3
 ```
+
+`pnpm test:s3` requires Docker and uses Adobe S3Mock from `compose.yaml`. It starts the container, runs the S3 storage contract test, and leaves the container running; stop it with `pnpm s3:down`.
 
 ## Documentation
 
