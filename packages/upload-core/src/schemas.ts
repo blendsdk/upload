@@ -46,6 +46,7 @@ export const createUploadSessionResponseSchema = z.object({
   id: z.string().uuid(),
   token: z.string().min(1),
   tusEndpoint: z.string().min(1),
+  uploadUrl: z.string().min(1).optional(),
   chunkSize: z.number().int().positive(),
   expiresAt: z.string().min(1),
   constraints: uploadConstraintsSchema,

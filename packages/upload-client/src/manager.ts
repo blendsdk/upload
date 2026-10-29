@@ -191,7 +191,6 @@ export class UploadManager {
     if (!item || item.state.status !== 'failed') {
       return;
     }
-    item.transportComplete = false;
     this.patch(id, {
       status: 'queued',
       error: undefined,
@@ -349,6 +348,7 @@ export class UploadManager {
             purpose: this.purpose,
             token: item.session.token,
             tusEndpoint: item.session.tusEndpoint,
+            ...(item.session.uploadUrl ? { uploadUrl: item.session.uploadUrl } : {}),
             chunkSize: item.session.chunkSize,
           },
           onProgress: (bytesUploaded, bytesTotal) => {

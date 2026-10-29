@@ -169,6 +169,9 @@ export class UploadSessionController extends BaseController {
             id: existing.id,
             token,
             tusEndpoint: `${options.basePath ?? '/api/uploads'}/tus`,
+            ...(existing.tusUploadId
+              ? { uploadUrl: `${options.basePath ?? '/api/uploads'}/tus/${existing.tusUploadId}` }
+              : {}),
             chunkSize: options.chunkSize ?? 8 * 1024 * 1024,
             expiresAt: existing.expiresAt,
             constraints: existing.constraints,

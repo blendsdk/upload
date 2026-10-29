@@ -41,6 +41,7 @@ export class TusTransport implements UploadTransport {
 
     const upload = new tus.Upload(input.file, {
       endpoint: input.session.tusEndpoint,
+      ...(input.session.uploadUrl ? { uploadUrl: input.session.uploadUrl } : {}),
       chunkSize: input.session.chunkSize,
       retryDelays: [0, 1_000, 3_000, 5_000, 10_000, 20_000],
       headers: { Authorization: `Bearer ${input.session.token}` },

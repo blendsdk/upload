@@ -17,6 +17,6 @@ Shared protocol and validation primitives.
 
 `createDocumentPolicy(purpose, overrides)` accepts PDF, DOC and DOCX, defaults to immediate commit and serves documents as attachments.
 
-`createImagePolicy(purpose, overrides)` accepts JPEG, PNG, WebP, HEIC and HEIF, defaults to deferred commit and adds display/thumbnail processing.
+`createImagePolicy(purpose, overrides)` accepts JPEG, PNG and WebP, defaults to deferred commit and adds display/thumbnail processing. HEIC/HEIF requires an explicit host decoder; add it to the accept list only when that decoder is installed.
 
 The package has a `zod` peer dependency. Keep one Zod 4 version in the application.

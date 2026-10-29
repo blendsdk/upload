@@ -18,13 +18,7 @@ export const DEFAULT_DOCUMENT_MAX_SIZE = 100 * 1024 * 1024;
 export const DEFAULT_MAX_FILES = 20;
 
 /** MIME types accepted by the built-in image preset. */
-export const IMAGE_ACCEPT = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-] as const;
+export const IMAGE_ACCEPT = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 /** MIME types accepted by the built-in document preset. */
 export const DOCUMENT_ACCEPT = [

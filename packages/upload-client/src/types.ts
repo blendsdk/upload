@@ -34,6 +34,7 @@ export interface TransportSession {
   purpose: string;
   token: string;
   tusEndpoint: string;
+  uploadUrl?: string;
   chunkSize: number;
 }
 

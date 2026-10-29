@@ -139,6 +139,8 @@ export interface CreateUploadSessionResponse {
   id: string;
   token: string;
   tusEndpoint: string;
+  /** Existing tus resource to resume, when the session already created one. */
+  uploadUrl?: string;
   chunkSize: number;
   expiresAt: string;
   constraints: UploadConstraints;
