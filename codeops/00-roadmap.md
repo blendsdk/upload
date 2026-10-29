@@ -19,3 +19,7 @@
 
 | Feature | Roadmap | Completed | Last Updated |
 | ------- | ------- | --------- | ------------ |
+
+## Notes
+
+- `v0.1.0` is published to npm and tagged `v0.1.0`. The documentation site is live at https://blendsdk.github.io/upload/.

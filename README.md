@@ -11,6 +11,16 @@ The project is a lockstep-versioned monorepo with four packages:
 | `@blendsdk/webafx-upload`   | WebAFX v5 session API, tus integration, storage and finalization  |
 | `@blendsdk/fluentui-upload` | React 19 / Fluent UI v9 upload component                          |
 
+## Install
+
+```bash
+pnpm add @blendsdk/upload-core @blendsdk/upload-client
+pnpm add @blendsdk/webafx-upload
+pnpm add @blendsdk/fluentui-upload
+```
+
+The packages are published at `0.1.0` under the `@blendsdk` scope.
+
 ## Requirements
 
 - Node.js 22 or newer
