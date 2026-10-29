@@ -309,10 +309,10 @@ importers:
   packages/fluentui-upload:
     dependencies:
       '@blendsdk/upload-client':
-        specifier: ^0.2.0
+        specifier: ^0.2.1
         version: link:../upload-client
       '@blendsdk/upload-core':
-        specifier: ^0.2.0
+        specifier: ^0.2.1
         version: link:../upload-core
       react-dropzone:
         specifier: ^20.1.4
@@ -361,7 +361,7 @@ importers:
   packages/upload-client:
     dependencies:
       '@blendsdk/upload-core':
-        specifier: ^0.2.0
+        specifier: ^0.2.1
         version: link:../upload-core
       tus-js-client:
         specifier: ^4.3.1
@@ -389,7 +389,7 @@ importers:
   packages/webafx-upload:
     dependencies:
       '@blendsdk/upload-core':
-        specifier: ^0.2.0
+        specifier: ^0.2.1
         version: link:../upload-core
       '@tus/file-store':
         specifier: ^2.1.1
