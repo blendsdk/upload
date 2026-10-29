@@ -40,6 +40,7 @@ The full verification command is:
 
 ```bash
 pnpm verify
+pnpm test:e2e
 ```
 
 ## Documentation

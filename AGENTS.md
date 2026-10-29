@@ -21,7 +21,8 @@
 
 - Install exactly from the lockfile: `pnpm install --frozen-lockfile`.
 - Full gate: `pnpm verify` (format, type-check, build, tests, docs build, pack check).
-- Focused gates: `pnpm type-check`, `pnpm build`, `pnpm test`, `pnpm docs:build`, `pnpm pack:check`.
+- Focused gates: `pnpm type-check`, `pnpm build`, `pnpm test`, `pnpm test:e2e`, `pnpm docs:build`, `pnpm pack:check`.
+- `pnpm test:e2e` builds the workspace, starts the Vite example, and runs Playwright against Chromium. CI runs it as a separate job.
 - One package: `pnpm --filter <package-name> <script>`.
 - Docs workbench: `pnpm docs:dev`.
 
