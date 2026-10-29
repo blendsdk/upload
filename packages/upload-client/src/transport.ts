@@ -52,6 +52,7 @@ export class TusTransport implements UploadTransport {
         filetype: input.file.type || 'application/octet-stream',
       },
       removeFingerprintOnSuccess: true,
+      storeFingerprintForResuming: false,
       onProgress: (bytesUploaded, bytesTotal) => {
         input.onProgress(bytesUploaded, bytesTotal);
       },

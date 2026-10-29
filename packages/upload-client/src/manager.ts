@@ -51,6 +51,10 @@ function errorDetail(error: unknown): UploadErrorDetail {
   return toUploadError(error, 'internal_error').toDetail();
 }
 
+function isCanceled(item: InternalItem): boolean {
+  return item.state.status === 'canceled';
+}
+
 /**
  * Queue-based upload manager.
  *
@@ -181,6 +185,11 @@ export class UploadManager {
     if (!item || item.state.status !== 'paused') {
       return;
     }
+    if (item.handle) {
+      item.handle.resume();
+      this.patch(id, { status: 'uploading' });
+      return;
+    }
     this.patch(id, { status: 'queued' });
     void this.start();
   }
@@ -205,6 +214,7 @@ export class UploadManager {
     if (!item) {
       return;
     }
+    this.patch(id, { status: 'canceled', error: undefined });
     item.handle?.cancel();
     if (item.session) {
       try {
@@ -213,7 +223,6 @@ export class UploadManager {
         // Cancellation is best effort; the server cleanup also expires it.
       }
     }
-    this.patch(id, { status: 'canceled', error: undefined });
   }
 
   /** Remove one item from the list. Active items are cancelled first. */
@@ -222,7 +231,12 @@ export class UploadManager {
     if (!item) {
       return;
     }
-    if (item.handle) {
+    if (
+      item.handle ||
+      item.state.status === 'creating' ||
+      item.state.status === 'uploading' ||
+      item.state.status === 'processing'
+    ) {
       await this.cancel(id);
     }
     const index = this.items.indexOf(item);
@@ -267,8 +281,7 @@ export class UploadManager {
 
   private addItem(file: File, error?: UploadErrorDetail): void {
     const descriptor = toFileDescriptor(file);
-    const resumeKey = `${this.purpose}:${fingerprint(descriptor).name}:${descriptor.size}:${descriptor.lastModified ?? 0}`;
-    const existingKey = this.resumeStore.get(resumeKey);
+    const resumeKey = `${this.purpose}:${fingerprint(descriptor).name.slice(0, 80)}:${descriptor.size}:${descriptor.lastModified ?? 0}`;
     const state: UploadItemState = {
       id: newId(),
       file: descriptor,
@@ -282,7 +295,7 @@ export class UploadManager {
     this.items.push({
       id: state.id,
       file,
-      resumeKey: existingKey ?? resumeKey,
+      resumeKey,
       state,
       transportComplete: false,
     });
@@ -327,6 +340,9 @@ export class UploadManager {
 
   private async processItem(item: InternalItem): Promise<void> {
     try {
+      if (isCanceled(item)) {
+        return;
+      }
       if (!item.session) {
         this.patch(item.id, { status: 'creating' });
         item.session = await this.client.createSession({
@@ -336,7 +352,28 @@ export class UploadManager {
           ...(this.context ? { context: this.context } : {}),
           resumeKey: item.resumeKey,
         });
+        if (isCanceled(item)) {
+          await this.client.cancel(item.session.id, item.session.token);
+          return;
+        }
         this.resumeStore.set(item.resumeKey, item.session.id);
+      }
+
+      if (
+        item.session.status === 'ready' ||
+        item.session.status === 'staged' ||
+        item.session.status === 'committed'
+      ) {
+        this.resumeStore.delete(item.resumeKey);
+        this.patch(item.id, {
+          status: 'ready',
+          result: item.session.result,
+          error: undefined,
+        });
+        return;
+      }
+      if (item.session.status === 'uploaded' || item.session.status === 'processing') {
+        item.transportComplete = true;
       }
 
       if (!item.transportComplete) {
@@ -361,7 +398,7 @@ export class UploadManager {
         });
         await item.handle.promise;
         item.handle = undefined;
-        if (item.state.status === 'canceled') {
+        if (isCanceled(item)) {
           return;
         }
         item.transportComplete = true;
@@ -377,6 +414,9 @@ export class UploadManager {
         session = await this.client.getSession(item.session.id, item.session.token);
       }
 
+      if (isCanceled(item)) {
+        return;
+      }
       if (
         session.status === 'ready' ||
         session.status === 'staged' ||

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { createUploadManager } from '@blendsdk/upload-client';
+import { createUploadManager, LocalStorageResumeStore } from '@blendsdk/upload-client';
 import type { UploadItemState } from '@blendsdk/upload-core';
 import type {
   FileUploadItemActions,
@@ -31,7 +31,14 @@ function itemActions(
 /** Bind a manager to React and expose dropzone and item actions. */
 export function useFileUpload(props: FileUploadProps): FileUploadState {
   const styles = useFileUploadStyles();
-  const [manager] = useState(
+  const contextKey = useMemo(() => {
+    try {
+      return JSON.stringify(props.context ?? {});
+    } catch {
+      return '';
+    }
+  }, [props.context]);
+  const manager = useMemo(
     () =>
       props.manager ??
       createUploadManager({
@@ -40,7 +47,19 @@ export function useFileUpload(props: FileUploadProps): FileUploadState {
         context: props.context,
         scope: props.scope,
         autoStart: props.autoStart ?? false,
+        resumeStore:
+          props.resumeStore ??
+          (typeof localStorage !== 'undefined' ? new LocalStorageResumeStore() : undefined),
       }),
+    [
+      props.manager,
+      props.client,
+      props.purpose,
+      props.scope,
+      contextKey,
+      props.autoStart,
+      props.resumeStore,
+    ],
   );
   const managerState = useSyncExternalStore(manager.subscribe, manager.getState, manager.getState);
   const strings = useMemo(() => resolveStrings(props.strings), [props.strings]);
@@ -58,7 +77,11 @@ export function useFileUpload(props: FileUploadProps): FileUploadState {
 
   useEffect(() => {
     for (const item of managerState.items) {
-      if (item.status === 'failed' && item.error && !notifiedFailed.current.has(item.id)) {
+      if (item.status !== 'failed') {
+        notifiedFailed.current.delete(item.id);
+        continue;
+      }
+      if (item.error && !notifiedFailed.current.has(item.id)) {
         notifiedFailed.current.add(item.id);
         props.onError?.(item.error, item);
       }
@@ -75,7 +98,6 @@ export function useFileUpload(props: FileUploadProps): FileUploadState {
     multiple,
     ...(props.maxFiles ? { maxFiles: props.maxFiles } : {}),
     noClick: true,
-    noKeyboard: true,
   });
 
   const rootProps = dropzone.getRootProps({

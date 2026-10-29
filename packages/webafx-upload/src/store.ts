@@ -1,4 +1,4 @@
-import type { StoredUploadFile, UploadSession } from '@blendsdk/upload-core';
+import type { StoredUploadFile, UploadSession, UploadStatus } from '@blendsdk/upload-core';
 import type { UploadFileRecord, UploadSessionRecord, UploadStore } from './types.js';
 
 function cloneRecord(record: UploadSessionRecord): UploadSessionRecord {
@@ -72,6 +72,18 @@ export class MemoryUploadStore implements UploadStore {
     return cloneRecord(next);
   }
 
+  public async updateIfStatus(
+    id: string,
+    statuses: UploadStatus[],
+    patch: Partial<UploadSessionRecord>,
+  ): Promise<UploadSessionRecord | undefined> {
+    const current = this.records.get(id);
+    if (!current || !statuses.includes(current.status)) {
+      return undefined;
+    }
+    return this.update(id, patch);
+  }
+
   public async findByClientKey(
     scope: string | undefined,
     ownerId: string | undefined,
@@ -83,6 +95,20 @@ export class MemoryUploadStore implements UploadStore {
       }
     }
     return undefined;
+  }
+
+  public async countActive(
+    scope: string | undefined,
+    ownerId: string | undefined,
+  ): Promise<number> {
+    return [...this.records.values()].filter(
+      (record) =>
+        record.scope === scope &&
+        record.ownerId === ownerId &&
+        record.status !== 'committed' &&
+        record.status !== 'canceled' &&
+        record.status !== 'expired',
+    ).length;
   }
 
   public async findFile(
@@ -102,6 +128,7 @@ export class MemoryUploadStore implements UploadStore {
       .filter(
         (record) =>
           record.status !== 'committed' &&
+          record.status !== 'ready' &&
           record.status !== 'canceled' &&
           record.status !== 'expired' &&
           Date.parse(record.expiresAt) <= now.getTime(),

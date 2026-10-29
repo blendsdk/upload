@@ -1,3 +1,4 @@
+import type { UploadStatus } from '@blendsdk/upload-core';
 import type { UploadFileRecord, UploadSessionRecord, UploadStore } from './types.js';
 
 /** Minimal SQL executor contract; pass a pg Pool/Client wrapper. */
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS upload_session (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS upload_session_client_key
-  ON upload_session (scope, owner_id, client_key)
+  ON upload_session (COALESCE(scope, ''), COALESCE(owner_id, ''), client_key)
   WHERE client_key IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS upload_session_expiry
@@ -112,6 +113,24 @@ export class PostgresUploadStore implements UploadStore {
     return result.rows[0]?.record;
   }
 
+  public async updateIfStatus(
+    id: string,
+    statuses: UploadStatus[],
+    patch: Partial<UploadSessionRecord>,
+  ): Promise<UploadSessionRecord | undefined> {
+    if (!patch.status) {
+      return undefined;
+    }
+    const result = await this.query<{ record: UploadSessionRecord }>(
+      `UPDATE ${this.table}
+       SET status = $2, record = record || $3::jsonb, updated_at = now()
+       WHERE id = $1 AND status = ANY($4::text[])
+       RETURNING record`,
+      [id, patch.status, JSON.stringify(patch), statuses],
+    );
+    return result.rows[0]?.record;
+  }
+
   public async findByClientKey(
     scope: string | undefined,
     ownerId: string | undefined,
@@ -126,6 +145,20 @@ export class PostgresUploadStore implements UploadStore {
       [scope ?? null, ownerId ?? null, clientKey],
     );
     return result.rows[0]?.record;
+  }
+
+  public async countActive(
+    scope: string | undefined,
+    ownerId: string | undefined,
+  ): Promise<number> {
+    const result = await this.query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM ${this.table}
+       WHERE scope IS NOT DISTINCT FROM $1
+         AND owner_id IS NOT DISTINCT FROM $2
+         AND status NOT IN ('committed', 'canceled', 'expired')`,
+      [scope ?? null, ownerId ?? null],
+    );
+    return result.rows[0]?.count ?? 0;
   }
 
   public async findFile(
@@ -145,7 +178,7 @@ export class PostgresUploadStore implements UploadStore {
   public async listExpired(now: Date): Promise<UploadSessionRecord[]> {
     const result = await this.query<{ record: UploadSessionRecord }>(
       `SELECT record FROM ${this.table}
-       WHERE status NOT IN ('committed', 'canceled', 'expired')
+       WHERE status NOT IN ('committed', 'ready', 'canceled', 'expired')
          AND expires_at <= $1`,
       [now.toISOString()],
     );

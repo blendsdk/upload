@@ -68,13 +68,22 @@ export function createUploadClient(options: UploadClientOptions): UploadClient {
   }
 
   async function request<T>(path: string, init: RequestInit, token?: string): Promise<T> {
-    const response = await fetchImpl(joinUrl(baseUrl, path), {
-      ...init,
-      headers: {
-        ...(await headers(token)),
-        ...(init.headers ?? {}),
-      },
-    });
+    let response: Response;
+    try {
+      response = await fetchImpl(joinUrl(baseUrl, path), {
+        ...init,
+        headers: {
+          ...(await headers(token)),
+          ...(init.headers ?? {}),
+        },
+      });
+    } catch (error) {
+      throw new UploadError(
+        'network_error',
+        error instanceof Error ? error.message : 'The network request failed.',
+        'retryable',
+      );
+    }
 
     const body = await readBody(response);
 

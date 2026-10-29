@@ -4,7 +4,15 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**/*.ts", "src/**/*.tsx", "package.json", "tsconfig*.json", "vite.config.ts"],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "public/**/*",
+        "index.html",
+        "package.json",
+        "tsconfig*.json",
+        "vite.config.ts"
+      ],
       "outputs": ["dist/**"]
     },
     "dev": {

@@ -20,21 +20,24 @@ function principalId(principal: unknown): string | undefined {
   }
   const value = principal as Record<string, unknown>;
   const direct = value.id ?? value.user_id ?? value.sub;
-  if (typeof direct === 'string') {
-    return direct;
+  if (typeof direct === 'string' || typeof direct === 'number' || typeof direct === 'bigint') {
+    const id = String(direct);
+    return id.length > 0 ? id : undefined;
   }
   const user = value.user;
   if (user && typeof user === 'object') {
     const nested = user as Record<string, unknown>;
     const id = nested.id ?? nested.user_id;
-    return typeof id === 'string' ? id : undefined;
+    return typeof id === 'string' || typeof id === 'number' || typeof id === 'bigint'
+      ? String(id)
+      : undefined;
   }
   return undefined;
 }
 
 function contentDisposition(session: UploadSessionRecord, file: UploadFileRecord): string {
-  const mode =
-    session.contentDisposition ?? (file.mime.startsWith('image/') ? 'inline' : 'attachment');
+  const inlineAllowed = file.mime.startsWith('image/') && file.mime !== 'image/svg+xml';
+  const mode = inlineAllowed ? (session.contentDisposition ?? 'inline') : 'attachment';
   const encoded = encodeURIComponent(file.name);
   return `${mode}; filename="file"; filename*=UTF-8''${encoded}`;
 }
@@ -90,8 +93,9 @@ export class UploadFileController extends BaseController {
         const claims = await verifyUploadToken(token, options.tokenSecret);
         authorized = claims.sid === found.session.id;
       }
-      if (!authorized && principalId(principal)) {
-        authorized = !found.session.ownerId || found.session.ownerId === principalId(principal);
+      const ownerId = principalId(principal);
+      if (!authorized && ownerId && found.session.ownerId === ownerId) {
+        authorized = true;
       }
       if (!authorized && options.authorizeFile) {
         authorized = await options.authorizeFile({
@@ -117,15 +121,26 @@ export class UploadFileController extends BaseController {
         res.setHeader('ETag', `"${found.file.sha256}"`);
       }
 
+      const send = (stream: ReturnType<UploadStorage['readStream']>): void => {
+        stream.on('error', () => {
+          if (!res.headersSent) {
+            res.status(404).end();
+          } else {
+            res.destroy();
+          }
+        });
+        stream.pipe(res);
+      };
+
       if (range) {
         res.status(206);
         res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${info.size}`);
         res.setHeader('Content-Length', range.end - range.start + 1);
-        storage.readStream(found.file.storageKey, range).pipe(res);
+        send(storage.readStream(found.file.storageKey, range));
       } else {
         res.status(200);
         res.setHeader('Content-Length', info.size);
-        storage.readStream(found.file.storageKey).pipe(res);
+        send(storage.readStream(found.file.storageKey));
       }
     } catch (error) {
       throw toApiError(error);

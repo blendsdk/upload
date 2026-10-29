@@ -89,6 +89,28 @@ describe('tus integration', () => {
       const uploaded = await store.get(id);
       expect(uploaded?.status).toBe('uploaded');
 
+      const secondId = '6f14e45f-ceea-4f6a-9f7a-0f2a1b3c4d5e';
+      await store.create({
+        ...record,
+        id: secondId,
+        status: 'pending',
+        tusUploadId: undefined,
+      });
+      const secondToken = await createUploadToken({
+        secret,
+        sessionId: secondId,
+        purpose: policy.purpose,
+        expiresAt: new Date(now.getTime() + 60_000),
+      });
+      const crossSession = await fetch(
+        `http://127.0.0.1:${port}/api/uploads/tus/${uploaded?.tusUploadId}`,
+        {
+          method: 'HEAD',
+          headers: { Authorization: `Bearer ${secondToken}`, 'Tus-Resumable': '1.0.0' },
+        },
+      );
+      expect(crossSession.status).toBe(403);
+
       const finalizer = new UploadFinalizer({
         store,
         storage,

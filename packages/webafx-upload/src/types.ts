@@ -111,11 +111,17 @@ export interface UploadStore {
   create(record: UploadSessionRecord): Promise<void>;
   get(id: string): Promise<UploadSessionRecord | undefined>;
   update(id: string, patch: Partial<UploadSessionRecord>): Promise<UploadSessionRecord | undefined>;
+  updateIfStatus(
+    id: string,
+    statuses: UploadStatus[],
+    patch: Partial<UploadSessionRecord>,
+  ): Promise<UploadSessionRecord | undefined>;
   findByClientKey(
     scope: string | undefined,
     ownerId: string | undefined,
     clientKey: string,
   ): Promise<UploadSessionRecord | undefined>;
+  countActive(scope: string | undefined, ownerId: string | undefined): Promise<number>;
   findFile(
     fileId: string,
   ): Promise<{ session: UploadSessionRecord; file: UploadFileRecord } | undefined>;
@@ -143,6 +149,7 @@ export interface UploadServerOptions {
   sessionTtlSeconds?: number;
   stagedTtlSeconds?: number;
   maxTusSize?: number;
+  maxActiveSessions?: number;
   cleanupIntervalMs?: number;
   tusLocker?: Locker;
   processors?: Record<string, UploadProcessor>;

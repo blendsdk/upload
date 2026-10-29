@@ -29,6 +29,7 @@ export interface UploadFinalizerOptions {
   policies: Record<string, UploadPolicy>;
   processors: Record<string, UploadProcessor>;
   resolveUploadPath: (session: UploadSessionRecord) => Promise<string>;
+  removeUpload?: (session: UploadSessionRecord) => Promise<void>;
   onFinalized?: UploadServerOptions['onFinalized'];
   onCommitted?: UploadServerOptions['onCommitted'];
   onDeleted?: UploadServerOptions['onDeleted'];
@@ -39,7 +40,6 @@ const MIME_EXTENSIONS: Record<string, string> = {
   'application/pdf': '.pdf',
   'application/msword': '.doc',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-  'application/zip': '.docx',
   'application/x-cfb': '.doc',
   'image/jpeg': '.jpg',
   'image/png': '.png',
@@ -92,7 +92,7 @@ export class UploadFinalizer {
       return current;
     }
 
-    const session = await this.options.store.get(sessionId);
+    let session = await this.options.store.get(sessionId);
     if (!session) {
       throw new UploadError('not_found', 'The upload session does not exist.');
     }
@@ -104,17 +104,48 @@ export class UploadFinalizer {
       return session;
     }
     if (session.status === 'failed' && session.files.length > 0) {
-      if (this.options.onFinalized) {
-        await this.options.onFinalized({ session, files: session.files, principal });
+      const original = session.files.find((file) => file.role === 'original');
+      if (!original) {
+        throw new UploadError('processing_failed', 'The failed session has no original file.');
+      }
+      let files = [...session.files];
+      if (session.commitMode === 'immediate') {
+        const processor = this.options.processors[session.purpose];
+        if (processor && !files.some((file) => file.role !== 'original')) {
+          files = [
+            ...files,
+            ...(await processor.process({
+              session,
+              fileId: original.id,
+              sourcePath: original.storageKey,
+              detectedMime: original.mime,
+              extension: extensionFor(original.mime, original.name),
+              scope: session.scope,
+              storage: this.options.storage,
+            })),
+          ];
+        }
       }
       const status: UploadStatus = session.commitMode === 'deferred' ? 'staged' : 'ready';
-      return (
-        (await this.options.store.update(sessionId, {
-          status,
-          error: undefined,
-          completedAt: new Date().toISOString(),
-        })) ?? session
-      );
+      const updated = await this.options.store.update(sessionId, {
+        status,
+        files,
+        error: undefined,
+        completedAt: new Date().toISOString(),
+        result: {
+          files: files.map(({ storageKey: _storageKey, ...file }) => file),
+        },
+      });
+      if (!updated) {
+        throw new UploadError(
+          'internal_error',
+          'The session disappeared during finalization retry.',
+        );
+      }
+      if (this.options.onFinalized) {
+        await this.options.onFinalized({ session: updated, files, principal });
+      }
+      return updated;
     }
     if (session.status !== 'uploaded' && session.status !== 'failed') {
       throw new UploadError('upload_incomplete', 'The upload has not finished yet.', 'retryable');
@@ -127,9 +158,20 @@ export class UploadFinalizer {
       );
     }
 
+    const claimed = await this.options.store.updateIfStatus(sessionId, ['uploaded', 'failed'], {
+      status: 'processing',
+    });
+    if (!claimed) {
+      const current = await this.options.store.get(sessionId);
+      if (current) {
+        return current;
+      }
+      throw new UploadError('not_found', 'The upload session does not exist.');
+    }
+    session = claimed;
+
     this.inFlight.add(sessionId);
     try {
-      await this.options.store.update(sessionId, { status: 'processing' });
       const sourcePath = await this.options.resolveUploadPath(session);
       const sourceStat = await stat(sourcePath);
       if (sourceStat.size !== session.file.size) {
@@ -143,6 +185,18 @@ export class UploadFinalizer {
       const detected = await fileTypeFromFile(sourcePath);
       const declaredMime = (session.file.type ?? '').toLowerCase();
       const detectedMime = detected?.mime ?? (declaredMime || 'application/octet-stream');
+      if (
+        detectedMime === 'image/svg+xml' ||
+        detectedMime === 'text/html' ||
+        detectedMime === 'application/xhtml+xml' ||
+        detectedMime === 'application/xml' ||
+        detectedMime === 'text/xml'
+      ) {
+        throw new UploadError(
+          'invalid_content',
+          'Executable or script-bearing document types are not accepted.',
+        );
+      }
       if (declaredMime && detected && detected.mime !== declaredMime) {
         const toleratedDocx =
           declaredMime ===
@@ -158,8 +212,13 @@ export class UploadFinalizer {
         }
       }
 
+      const effectiveMime =
+        detectedMime === 'application/zip' &&
+        declaredMime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          ? declaredMime
+          : detectedMime;
       const sha256 = await sha256File(sourcePath);
-      const extension = extensionFor(detectedMime, session.file.name);
+      const extension = extensionFor(effectiveMime, session.file.name);
       const originalId = randomUUID();
       const isDeferred = session.commitMode === 'deferred';
       const originalPath = isDeferred
@@ -171,13 +230,16 @@ export class UploadFinalizer {
         id: originalId,
         role: 'original',
         name: sanitizeFileName(session.file.name),
-        mime: detectedMime,
+        mime: effectiveMime,
         size: sourceStat.size,
         sha256,
         storageKey: originalPath,
       };
 
       const files: UploadFileRecord[] = [original];
+      // Persist the moved original before a processor can fail, so a retry
+      // knows where the bytes live instead of resolving the old tus path again.
+      await this.options.store.update(sessionId, { files });
       if (!isDeferred) {
         const processor = this.options.processors[session.purpose];
         if (processor) {
@@ -211,11 +273,19 @@ export class UploadFinalizer {
       }
 
       if (this.options.onFinalized) {
-        await this.options.onFinalized({
+        const callbackResult = await this.options.onFinalized({
           session: updated,
           files,
           principal,
         } satisfies FinalizedUploadContext);
+        if (callbackResult?.externalId) {
+          const withExternalId = await this.options.store.update(sessionId, {
+            result: { ...(updated.result ?? { files: [] }), externalId: callbackResult.externalId },
+          });
+          if (withExternalId) {
+            return withExternalId;
+          }
+        }
       }
 
       return updated;
@@ -263,6 +333,7 @@ export class UploadFinalizer {
       files.push({ ...file, storageKey: finalKey });
     }
 
+    await this.options.store.update(sessionId, { files });
     const processor = this.options.processors[session.purpose];
     if (processor && !files.some((file) => file.role !== 'original')) {
       const original = files.find((file) => file.role === 'original');
@@ -284,6 +355,7 @@ export class UploadFinalizer {
     const updated = await this.options.store.update(sessionId, {
       status: 'committed',
       files,
+      clientKey: undefined,
       completedAt: new Date().toISOString(),
       result: {
         files: files.map(({ storageKey: _storageKey, ...file }) => file),
@@ -294,12 +366,20 @@ export class UploadFinalizer {
     }
 
     if (this.options.onCommitted) {
-      await this.options.onCommitted({
+      const callbackResult = await this.options.onCommitted({
         session: updated,
         files,
         context,
         principal,
       } satisfies CommittedUploadContext);
+      if (callbackResult?.externalId) {
+        const withExternalId = await this.options.store.update(sessionId, {
+          result: { ...(updated.result ?? { files: [] }), externalId: callbackResult.externalId },
+        });
+        if (withExternalId) {
+          return withExternalId;
+        }
+      }
     }
     return updated;
   }
@@ -312,9 +392,12 @@ export class UploadFinalizer {
     for (const file of session.files) {
       await this.options.storage.delete(file.storageKey);
     }
+    await this.options.removeUpload?.(session);
     await this.options.store.update(sessionId, {
       status: 'expired',
       files: [],
+      clientKey: undefined,
+      tusUploadId: undefined,
       result: undefined,
       error: {
         code: 'session_expired',
@@ -332,9 +415,12 @@ export class UploadFinalizer {
     for (const file of session.files) {
       await this.options.storage.delete(file.storageKey);
     }
+    await this.options.removeUpload?.(session);
     await this.options.store.update(sessionId, {
       status: 'canceled',
       files: [],
+      clientKey: undefined,
+      tusUploadId: undefined,
       result: undefined,
       error: undefined,
     });

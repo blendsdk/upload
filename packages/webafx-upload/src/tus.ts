@@ -57,6 +57,8 @@ export function createTusServer(options: TusServerOptions): {
       'Content-Type',
       'Tus-Resumable',
       'Upload-Length',
+      'Upload-Defer-Length',
+      'Upload-Concat',
       'Upload-Metadata',
       'Upload-Offset',
     ],
@@ -89,7 +91,7 @@ export function createTusServer(options: TusServerOptions): {
       if (!session) {
         tusError(404, 'not_found', 'The upload session does not exist.');
       }
-      if (uploadId && session.tusUploadId && uploadId !== session.tusUploadId) {
+      if (request.method !== 'POST' && uploadId && session.tusUploadId !== uploadId) {
         tusError(403, 'not_authorized', 'The upload token does not match this upload.');
       }
       if (session.status === 'expired' || session.status === 'canceled') {
@@ -120,8 +122,17 @@ export function createTusServer(options: TusServerOptions): {
       if (session.status !== 'pending' && session.status !== 'uploading') {
         tusError(409, 'upload_incomplete', 'This upload session cannot accept bytes.');
       }
-      if (upload.size !== undefined && upload.size !== session.file.size) {
+      if (session.tusUploadId) {
+        tusError(409, 'upload_incomplete', 'This upload session already has a transport resource.');
+      }
+      if (upload.size === undefined) {
+        tusError(400, 'invalid_request', 'Deferred upload length is not supported.');
+      }
+      if (upload.size !== session.file.size) {
         tusError(400, 'invalid_request', 'The tus upload length does not match the session.');
+      }
+      if (upload.size > session.constraints.maxSize) {
+        tusError(413, 'file_too_large', 'The upload exceeds the policy size limit.');
       }
       await options.store.update(session.id, {
         status: 'uploading',
@@ -138,7 +149,7 @@ export function createTusServer(options: TusServerOptions): {
 
     onUploadFinish: async (request, upload: Upload) => {
       const session = sessions.get(request);
-      if (!session) {
+      if (!session || session.tusUploadId !== upload.id) {
         return {};
       }
       await options.store.update(session.id, {

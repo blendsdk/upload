@@ -95,7 +95,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Install pnpm
@@ -138,6 +138,7 @@ jobs:
             --type ${{ inputs.version_type }} \
             --ci \
             --no-git-commit \
+            --no-changelog \
             --fail-on-no-changes
 
       - name: Generate changelog

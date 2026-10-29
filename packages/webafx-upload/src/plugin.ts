@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import express from 'express';
 import type { PluginDefinition } from 'blendsdk/webafx';
@@ -38,7 +39,10 @@ export function uploadPlugin(options: UploadServerOptions): PluginDefinition {
     options.storage ??
     new LocalUploadStorage(options.storageRoot ?? path.resolve(process.cwd(), 'var', 'uploads'));
   const store = options.store ?? new MemoryUploadStore();
-  const processors: Record<string, UploadProcessor> = { ...(options.processors ?? {}) };
+  const processors: Record<string, UploadProcessor> = Object.assign(
+    Object.create(null) as Record<string, UploadProcessor>,
+    options.processors ?? {},
+  );
 
   for (const policy of Object.values(options.policies)) {
     if (
@@ -54,13 +58,18 @@ export function uploadPlugin(options: UploadServerOptions): PluginDefinition {
     priority: 40,
     factory: async ({ app, logger }) => {
       const uploadLogger = (options.logger ?? logger) as UploadLogger;
+      await mkdir(storage.tusDirectory, { recursive: true, mode: 0o700 });
       const { server: tusServer, datastore } = createTusServer({
         basePath,
         store,
         storageDirectory: storage.tusDirectory,
         tokenSecret: options.tokenSecret,
         maxSize: options.maxTusSize,
-        expirationMs: (options.sessionTtlSeconds ?? 24 * 60 * 60) * 1000,
+        expirationMs:
+          Math.max(
+            options.sessionTtlSeconds ?? 24 * 60 * 60,
+            options.stagedTtlSeconds ?? 7 * 24 * 60 * 60,
+          ) * 1000,
         locker: options.tusLocker,
         logger: uploadLogger,
       });
@@ -74,6 +83,16 @@ export function uploadPlugin(options: UploadServerOptions): PluginDefinition {
         onFinalized: options.onFinalized,
         onCommitted: options.onCommitted,
         onDeleted: options.onDeleted,
+        removeUpload: async (session: UploadSessionRecord) => {
+          if (!session.tusUploadId) {
+            return;
+          }
+          try {
+            await datastore.remove(session.tusUploadId);
+          } catch {
+            // The tus file may already have been expired or removed.
+          }
+        },
         resolveUploadPath: async (session: UploadSessionRecord) => {
           if (!session.tusUploadId) {
             throw new Error(`Upload session ${session.id} has no tus upload id.`);
@@ -112,12 +131,25 @@ export function uploadPlugin(options: UploadServerOptions): PluginDefinition {
 
       const maintenance = new UploadMaintenance(store, finalizer, uploadLogger);
       const cleanupIntervalMs = options.cleanupIntervalMs ?? 15 * 60 * 1000;
+      let cleaning = false;
+      const runCleanup = async (): Promise<void> => {
+        if (cleaning) {
+          return;
+        }
+        cleaning = true;
+        try {
+          await maintenance.cleanup();
+          await tusServer.cleanUpExpiredUploads();
+        } catch (error) {
+          await uploadLogger.error('Upload cleanup failed', {
+            message: error instanceof Error ? error.message : String(error),
+          });
+        } finally {
+          cleaning = false;
+        }
+      };
       const cleanupTimer =
-        cleanupIntervalMs > 0
-          ? setInterval(() => {
-              void maintenance.cleanup();
-            }, cleanupIntervalMs)
-          : undefined;
+        cleanupIntervalMs > 0 ? setInterval(() => void runCleanup(), cleanupIntervalMs) : undefined;
       cleanupTimer?.unref?.();
 
       const router = express.Router();

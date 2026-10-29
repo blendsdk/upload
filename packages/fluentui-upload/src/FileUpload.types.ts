@@ -1,5 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import type { UploadClient, UploadManager } from '@blendsdk/upload-client';
+import type { UploadClient, UploadManager, UploadResumeStore } from '@blendsdk/upload-client';
 import type { UploadErrorDetail, UploadItemState, UploadManagerState } from '@blendsdk/upload-core';
 
 /** Visible strings. English defaults are merged key by key. */
@@ -12,6 +12,7 @@ export interface FileUploadStrings {
   startUpload: string;
   pauseAll: string;
   resumeAll: string;
+  cancel: string;
   cancelAll: string;
   remove: string;
   retry: string;
@@ -49,6 +50,8 @@ export interface FileUploadProps extends Omit<
   scope?: string;
   /** Optional externally owned manager for app-level upload trays. */
   manager?: UploadManager;
+  /** Optional persistence for resume keys; defaults to localStorage in browsers. */
+  resumeStore?: UploadResumeStore;
   /** Client-side picker hint; the server policy remains authoritative. */
   accept?: string[];
   /** Client-side hint; the server policy remains authoritative. */

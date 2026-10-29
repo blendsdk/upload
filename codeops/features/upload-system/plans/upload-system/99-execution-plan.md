@@ -24,7 +24,7 @@
 
 - `pnpm type-check`: pass
 - `pnpm build`: pass
-- `pnpm test`: 26 tests pass
+- `pnpm test`: 29 tests pass
 - `pnpm docs:build`: pass
 - `pnpm pack:check`: pass
 - `pnpm format:check`: pass after formatting

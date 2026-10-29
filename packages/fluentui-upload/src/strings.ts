@@ -10,6 +10,7 @@ export const DEFAULT_STRINGS: FileUploadStrings = {
   startUpload: 'Start upload',
   pauseAll: 'Pause all',
   resumeAll: 'Resume all',
+  cancel: 'Cancel',
   cancelAll: 'Cancel all',
   remove: 'Remove',
   retry: 'Retry',

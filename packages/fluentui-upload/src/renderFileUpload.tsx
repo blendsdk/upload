@@ -145,7 +145,7 @@ function defaultItem(
             appearance="subtle"
             size="small"
             icon={<Stop24Regular />}
-            aria-label={`${state.strings.cancelAll} ${item.file.name}`}
+            aria-label={`${state.strings.cancel} ${item.file.name}`}
             onClick={actions.cancel}
           />
         )}
@@ -197,16 +197,6 @@ export function renderFileUpload(
         <ArrowUpload24Regular className={classes.dropzoneIcon} aria-hidden />
         <Text className={classes.dropzoneTitle}>{strings.dropTitle}</Text>
         <Text className={classes.dropzoneHint}>{strings.dropHint}</Text>
-        <Button
-          appearance="primary"
-          disabled={props.disabled}
-          onClick={(event) => {
-            event.stopPropagation();
-            state.actions.openPicker();
-          }}
-        >
-          {strings.browse}
-        </Button>
       </div>
 
       <div className={classes.toolbar}>

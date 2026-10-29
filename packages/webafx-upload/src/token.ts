@@ -78,13 +78,15 @@ export function readBearerToken(request: {
   if (!headers) {
     return undefined;
   }
+  const match = (value: string | undefined): string | undefined => {
+    const result = value ? /^Bearer\s+(.+)$/i.exec(value) : null;
+    return result?.[1];
+  };
   const candidate = headers as { get?: (name: string) => string | null };
   if (typeof candidate.get === 'function') {
-    const value = candidate.get('authorization');
-    return value?.startsWith('Bearer ') ? value.slice('Bearer '.length) : undefined;
+    return match(candidate.get('authorization') ?? undefined);
   }
   const values = headers as Record<string, string | string[] | undefined>;
   const raw = values.authorization;
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  return value?.startsWith('Bearer ') ? value.slice('Bearer '.length) : undefined;
+  return match(Array.isArray(raw) ? raw[0] : raw);
 }

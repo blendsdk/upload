@@ -26,20 +26,27 @@ import type {
 const policyParamsSchema = z.object({ purpose: z.string().min(1) });
 const sessionParamsSchema = z.object({ id: z.string().uuid() });
 
+function policyFor(options: UploadServerOptions, purpose: string) {
+  return Object.hasOwn(options.policies, purpose) ? options.policies[purpose] : undefined;
+}
+
 function principalId(principal: unknown): string | undefined {
   if (!principal || typeof principal !== 'object') {
     return undefined;
   }
   const value = principal as Record<string, unknown>;
   const direct = value.id ?? value.user_id ?? value.sub;
-  if (typeof direct === 'string') {
-    return direct;
+  if (typeof direct === 'string' || typeof direct === 'number' || typeof direct === 'bigint') {
+    const id = String(direct);
+    return id.length > 0 ? id : undefined;
   }
   const user = value.user;
   if (user && typeof user === 'object') {
     const nested = user as Record<string, unknown>;
     const id = nested.id ?? nested.user_id;
-    return typeof id === 'string' ? id : undefined;
+    return typeof id === 'string' || typeof id === 'number' || typeof id === 'bigint'
+      ? String(id)
+      : undefined;
   }
   return undefined;
 }
@@ -95,7 +102,7 @@ export class UploadSessionController extends BaseController {
   public async getPolicy(req: Request, res: Response): Promise<void> {
     const options = await this.options(req);
     const { purpose } = req.services.getParams<{ purpose: string }>();
-    const policy = options.policies[purpose];
+    const policy = policyFor(options, purpose);
     if (!policy) {
       throw new UploadApiError('not_found', 404, 'No upload policy exists for this purpose.');
     }
@@ -112,7 +119,7 @@ export class UploadSessionController extends BaseController {
       const options = await this.options(req);
       const store = await this.store(req);
       const input = req.services.getParams<CreateUploadSessionRequest>();
-      const policy = options.policies[input.purpose];
+      const policy = policyFor(options, input.purpose);
       if (!policy) {
         throw new UploadApiError('not_found', 404, 'No upload policy exists for this purpose.');
       }
@@ -143,11 +150,24 @@ export class UploadSessionController extends BaseController {
       }
 
       const ownerId = access?.ownerId ?? principalId(principal);
-      if (!access && !ownerId) {
-        throw new UploadApiError('not_authorized', 401, 'Authentication is required.');
+      if (!ownerId) {
+        throw new UploadApiError(
+          'not_authorized',
+          401,
+          'An owner is required to create an upload session.',
+        );
       }
 
       const scope = access?.scope;
+      const active = await store.countActive(scope, ownerId);
+      if (active >= (options.maxActiveSessions ?? 100)) {
+        throw new UploadApiError(
+          'quota_exceeded',
+          429,
+          'Too many active upload sessions. Finish or cancel an existing upload first.',
+          'retryable',
+        );
+      }
       const clientKey = input.resumeKey;
       if (clientKey) {
         const existing = await store.findByClientKey(scope, ownerId, clientKey);
@@ -172,6 +192,8 @@ export class UploadSessionController extends BaseController {
             ...(existing.tusUploadId
               ? { uploadUrl: `${options.basePath ?? '/api/uploads'}/tus/${existing.tusUploadId}` }
               : {}),
+            status: existing.status,
+            ...(existing.result ? { result: existing.result } : {}),
             chunkSize: options.chunkSize ?? 8 * 1024 * 1024,
             expiresAt: existing.expiresAt,
             constraints: existing.constraints,
@@ -272,7 +294,7 @@ export class UploadSessionController extends BaseController {
         if (!session) {
           throw new UploadApiError('not_found', 404, `Upload session ${id} does not exist.`);
         }
-        if (session.ownerId && session.ownerId !== principalId(principal)) {
+        if (!session.ownerId || session.ownerId !== principalId(principal)) {
           throw new UploadApiError('not_authorized', 403, 'You may not commit this upload.');
         }
         results.push(toPublicSession(await finalizer.commit(id, context, principal)));
@@ -295,7 +317,7 @@ export class UploadSessionController extends BaseController {
       if (!session) {
         throw new UploadApiError('not_found', 404, 'The upload session does not exist.');
       }
-      if (session.ownerId && session.ownerId !== principalId(principal)) {
+      if (!session.ownerId || session.ownerId !== principalId(principal)) {
         throw new UploadApiError('not_authorized', 403, 'You may not commit this upload.');
       }
       const finalizer = await this.finalizer(req);
@@ -332,7 +354,7 @@ export class UploadSessionController extends BaseController {
       if (!session) {
         throw new UploadError('not_found', 'The upload session does not exist.');
       }
-      return { session, principal: undefined };
+      return { session, principal: await this.principal(req) };
     }
 
     const principal = await this.principal(req);
@@ -344,7 +366,7 @@ export class UploadSessionController extends BaseController {
     if (!session) {
       throw new UploadError('not_found', 'The upload session does not exist.');
     }
-    if (session.ownerId && session.ownerId !== ownerId) {
+    if (!session.ownerId || session.ownerId !== ownerId) {
       throw new UploadError('not_authorized', 'You may not access this upload.');
     }
     return { session, principal };
