@@ -21,7 +21,8 @@ The scope hash is derived from the opaque application scope. A tenant or workspa
 ## S3 object storage
 
 ```ts
-import { createS3UploadStorage, uploadPlugin } from '@blendsdk/webafx-upload';
+import { uploadPlugin } from '@blendsdk/webafx-upload';
+import { createS3UploadStorage } from '@blendsdk/webafx-upload/s3';
 
 const storage = await createS3UploadStorage({
   bucket: process.env.S3_BUCKET!,

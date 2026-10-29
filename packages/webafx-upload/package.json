@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./s3": {
+      "types": "./dist/s3-storage.d.ts",
+      "import": "./dist/s3-storage.js"
     }
   },
   "files": [

@@ -10,7 +10,6 @@ export * from './store.js';
 export * from './postgres-store.js';
 export * from './redis-locker.js';
 export * from './scanner.js';
-export * from './s3-storage.js';
 export * from './storage.js';
 export * from './heic.js';
 export * from './processors.js';

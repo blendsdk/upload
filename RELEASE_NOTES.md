@@ -1,5 +1,11 @@
 # Release Notes
 
+## v0.2.1 — 2026-10-29
+
+### Fixed
+
+- The S3 adapter now lives behind the `@blendsdk/webafx-upload/s3` subpath. Importing the root package no longer needs the optional AWS SDK types. The adapter API itself is unchanged.
+
 ## v0.2.0 — 2026-10-29
 
 ### Added

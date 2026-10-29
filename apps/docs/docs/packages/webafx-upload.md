@@ -25,7 +25,7 @@ The plugin must be installed after the authentication plugin and before controll
 ## Classes and helpers
 
 - `LocalUploadStorage`
-- `S3UploadStorage`, `createS3UploadStorage`
+- `S3UploadStorage`, `createS3UploadStorage` (`@blendsdk/webafx-upload/s3`)
 - `MemoryUploadStore`, `PostgresUploadStore`
 - `RedisLocker`
 - `ClamAvScanner`, `NoopScanner`
