@@ -37,4 +37,26 @@ Use deferred commit for dialogs and signup forms so a cancelled form does not le
 
 ## HEIC
 
-The prebuilt `sharp` binary does not include HEIC/HEIF decoding because of HEVC licensing. Add a server decoder only if the policy accepts HEIC; otherwise reject it with a clear message. A browser-side best-effort conversion can be added in a future client preparation step.
+The prebuilt `sharp` binary does not include HEIC/HEIF decoding because of HEVC licensing. Install the optional `heic-convert` peer and provide a decoder:
+
+```ts
+import { HeicConvertDecoder, uploadPlugin } from '@blendsdk/webafx-upload';
+
+app.use(
+  uploadPlugin({
+    ...options,
+    heicDecoder: new HeicConvertDecoder(),
+    policies: {
+      ...options.policies,
+      'actor.visual': createImagePolicy('actor.visual', {
+        constraints: {
+          ...createImagePolicy('actor.visual').constraints,
+          accept: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
+        },
+      }),
+    },
+  }),
+);
+```
+
+Only accept HEIC when the decoder is installed; otherwise reject it with a clear unsupported-type message.

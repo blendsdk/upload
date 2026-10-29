@@ -25,7 +25,11 @@ The plugin must be installed after the authentication plugin and before controll
 ## Classes and helpers
 
 - `LocalUploadStorage`
-- `MemoryUploadStore`
+- `S3UploadStorage`, `createS3UploadStorage`
+- `MemoryUploadStore`, `PostgresUploadStore`
+- `RedisLocker`
+- `ClamAvScanner`, `NoopScanner`
+- `HeicConvertDecoder`
 - `SharpImageProcessor`
 - `UploadFinalizer`
 - `UploadSessionController`

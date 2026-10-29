@@ -13,7 +13,22 @@ The tus `FileStore` also has an expiration period; configure it consistently wit
 
 ## Multi-instance deployments
 
-The default tus locker is in-memory. For more than one instance, provide a shared `Locker` (for example Redis) through `tusLocker`, and use a shared database for `UploadStore`. Local filesystem storage also requires a shared volume or a shared object store.
+The default tus locker is in-memory. For more than one instance, provide a shared `Locker` through `tusLocker`:
+
+```ts
+import Redis from 'ioredis';
+import { RedisLocker, uploadPlugin } from '@blendsdk/webafx-upload';
+
+const redis = new Redis(process.env.REDIS_URL!);
+app.use(
+  uploadPlugin({
+    ...options,
+    tusLocker: new RedisLocker({ client: redis, ttlMs: 30_000 }),
+  }),
+);
+```
+
+Use a shared database for `UploadStore`. Local filesystem storage also requires a shared volume or a shared object store.
 
 ## Reverse proxy
 

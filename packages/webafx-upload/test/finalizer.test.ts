@@ -6,7 +6,7 @@ import type { UploadPolicy } from '@blendsdk/upload-core';
 import { UploadFinalizer } from '../src/finalizer.js';
 import { MemoryUploadStore } from '../src/store.js';
 import { LocalUploadStorage } from '../src/storage.js';
-import type { UploadSessionRecord } from '../src/types.js';
+import type { UploadServerOptions, UploadSessionRecord } from '../src/types.js';
 
 const roots: string[] = [];
 
@@ -14,7 +14,11 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
-async function fixture(commitMode: UploadPolicy['commitMode'] = 'immediate') {
+async function fixture(
+  commitMode: UploadPolicy['commitMode'] = 'immediate',
+  onCommitted?: UploadServerOptions['onCommitted'],
+  scanner?: UploadServerOptions['scanner'],
+) {
   const root = await mkdtemp(path.join(tmpdir(), 'blendsdk-upload-'));
   roots.push(root);
   const storage = new LocalUploadStorage(root);
@@ -54,6 +58,8 @@ async function fixture(commitMode: UploadPolicy['commitMode'] = 'immediate') {
     },
     processors: {},
     resolveUploadPath: async () => source,
+    onCommitted,
+    scanner,
   });
   return { id, store, storage, finalizer, content };
 }
@@ -85,5 +91,45 @@ describe('UploadFinalizer', () => {
     const result = await finalizer.finalize(id);
     await finalizer.delete(id);
     expect(await storage.exists(result.files[0]!.storageKey)).toBe(false);
+  });
+
+  it('does not move files twice during concurrent commits', async () => {
+    const { id, finalizer, store } = await fixture('deferred');
+    await finalizer.finalize(id);
+    const results = await Promise.all([
+      finalizer.commit(id, undefined),
+      finalizer.commit(id, undefined),
+    ]);
+    expect((await store.get(id))?.status).toBe('committed');
+    expect(results.some((result) => result.status === 'committed')).toBe(true);
+  });
+
+  it('rejects an infected file before moving it to final storage', async () => {
+    const { id, finalizer, store, storage } = await fixture('immediate', undefined, {
+      scan: async () => ({ clean: false, signature: 'Eicar-Test-Signature' }),
+    });
+    await expect(finalizer.finalize(id)).rejects.toMatchObject({ code: 'virus_detected' });
+    const session = await store.get(id);
+    expect(session?.status).toBe('failed');
+    expect(session?.files).toHaveLength(0);
+    expect(await storage.exists(path.join(storage.root, 'scopes'))).toBe(false);
+  });
+
+  it('returns a failed callback to staged for retry', async () => {
+    let fail = true;
+    const { id, finalizer, store } = await fixture('deferred', async () => {
+      if (fail) {
+        throw new Error('attachment failed');
+      }
+      return { externalId: 'actor-document-1' };
+    });
+    await finalizer.finalize(id);
+    await expect(finalizer.commit(id, undefined)).rejects.toThrow('attachment failed');
+    expect((await store.get(id))?.status).toBe('staged');
+
+    fail = false;
+    const committed = await finalizer.commit(id, undefined);
+    expect(committed.status).toBe('committed');
+    expect(committed.result?.externalId).toBe('actor-document-1');
   });
 });

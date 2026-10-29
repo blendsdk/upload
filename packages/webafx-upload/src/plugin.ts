@@ -49,7 +49,7 @@ export function uploadPlugin(options: UploadServerOptions): PluginDefinition {
       !processors[policy.purpose] &&
       policy.constraints.accept.some((type) => type.startsWith('image/'))
     ) {
-      processors[policy.purpose] = new SharpImageProcessor();
+      processors[policy.purpose] = new SharpImageProcessor(options.heicDecoder);
     }
   }
 
@@ -83,6 +83,7 @@ export function uploadPlugin(options: UploadServerOptions): PluginDefinition {
         onFinalized: options.onFinalized,
         onCommitted: options.onCommitted,
         onDeleted: options.onDeleted,
+        scanner: options.scanner,
         removeUpload: async (session: UploadSessionRecord) => {
           if (!session.tusUploadId) {
             return;

@@ -96,7 +96,10 @@ export class LocalUploadStorage implements UploadStorage {
     return { size: result.size };
   }
 
-  public readStream(filePath: string, range?: { start: number; end: number }): ReadStream {
+  public async readStream(
+    filePath: string,
+    range?: { start: number; end: number },
+  ): Promise<ReadStream> {
     return createReadStream(filePath, range);
   }
 

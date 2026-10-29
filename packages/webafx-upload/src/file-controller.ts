@@ -121,7 +121,18 @@ export class UploadFileController extends BaseController {
         res.setHeader('ETag', `"${found.file.sha256}"`);
       }
 
-      const send = (stream: ReturnType<UploadStorage['readStream']>): void => {
+      const send = async (range?: { start: number; end: number }): Promise<void> => {
+        let stream;
+        try {
+          stream = await storage.readStream(found.file.storageKey, range);
+        } catch {
+          if (!res.headersSent) {
+            res.status(404).end();
+          } else {
+            res.destroy();
+          }
+          return;
+        }
         stream.on('error', () => {
           if (!res.headersSent) {
             res.status(404).end();
@@ -136,11 +147,11 @@ export class UploadFileController extends BaseController {
         res.status(206);
         res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${info.size}`);
         res.setHeader('Content-Length', range.end - range.start + 1);
-        send(storage.readStream(found.file.storageKey, range));
+        await send(range);
       } else {
         res.status(200);
         res.setHeader('Content-Length', info.size);
-        send(storage.readStream(found.file.storageKey));
+        await send();
       }
     } catch (error) {
       throw toApiError(error);

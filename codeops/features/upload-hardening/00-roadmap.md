@@ -1,0 +1,19 @@
+# Roadmap: Upload Hardening
+
+> **Feature-Set**: upload-hardening
+> **Status**: Done
+> **Created**: 2026-10-29
+> **Last Updated**: 2026-10-29
+> **Progress**: 6 / 6 (100%)
+> **CodeOps Artifact Schema**: 1
+
+## Tracker
+
+| ID    | Title                | RD                                                | Plan                                       | Stage | Status |
+| ----- | -------------------- | ------------------------------------------------- | ------------------------------------------ | ----- | ------ |
+| RD-01 | Browser E2E coverage | [RD-01](requirements/RD-01-browser-e2e.md)        | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
+| RD-02 | S3 object storage    | [RD-02](requirements/RD-02-s3-storage.md)         | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
+| RD-03 | Redis tus locking    | [RD-03](requirements/RD-03-redis-locking.md)      | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
+| RD-04 | Malware scanning     | [RD-04](requirements/RD-04-malware-scanning.md)   | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
+| RD-05 | HEIC decoding        | [RD-05](requirements/RD-05-heic-decoding.md)      | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
+| RD-06 | Commit concurrency   | [RD-06](requirements/RD-06-commit-concurrency.md) | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |

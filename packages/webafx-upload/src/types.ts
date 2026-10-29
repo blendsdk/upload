@@ -10,6 +10,8 @@ import type {
   UploadSession,
   UploadStatus,
 } from '@blendsdk/upload-core';
+import type { HeicDecoder } from './heic.js';
+import type { ContentScanner } from './scanner.js';
 
 /** One stored representation, with the private storage key used by the server. */
 export interface UploadFileRecord extends StoredUploadFile {
@@ -102,7 +104,7 @@ export interface UploadStorage {
   write(filePath: string, data: Uint8Array): Promise<void>;
   delete(filePath: string): Promise<void>;
   stat(filePath: string): Promise<{ size: number }>;
-  readStream(filePath: string, range?: { start: number; end: number }): Readable;
+  readStream(filePath: string, range?: { start: number; end: number }): Promise<Readable>;
   exists(filePath: string): Promise<boolean>;
 }
 
@@ -152,6 +154,8 @@ export interface UploadServerOptions {
   maxActiveSessions?: number;
   cleanupIntervalMs?: number;
   tusLocker?: Locker;
+  scanner?: ContentScanner;
+  heicDecoder?: HeicDecoder;
   processors?: Record<string, UploadProcessor>;
   authorizeSession?: (
     context: AuthorizeSessionContext,

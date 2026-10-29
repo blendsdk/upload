@@ -30,6 +30,7 @@ export interface UploadFinalizerOptions {
   processors: Record<string, UploadProcessor>;
   resolveUploadPath: (session: UploadSessionRecord) => Promise<string>;
   removeUpload?: (session: UploadSessionRecord) => Promise<void>;
+  scanner?: UploadServerOptions['scanner'];
   onFinalized?: UploadServerOptions['onFinalized'];
   onCommitted?: UploadServerOptions['onCommitted'];
   onDeleted?: UploadServerOptions['onDeleted'];
@@ -217,6 +218,30 @@ export class UploadFinalizer {
         declaredMime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           ? declaredMime
           : detectedMime;
+
+      if (this.options.scanner) {
+        let scan;
+        try {
+          scan = await this.options.scanner.scan(sourcePath);
+        } catch (error) {
+          throw new UploadError(
+            'processing_failed',
+            'The security scan could not be completed.',
+            'retryable',
+            { scanError: error instanceof Error ? error.message : String(error) },
+          );
+        }
+        if (!scan.clean) {
+          await this.options.storage.delete(sourcePath);
+          throw new UploadError(
+            'virus_detected',
+            'The file failed the security scan.',
+            'terminal',
+            { signature: scan.signature },
+          );
+        }
+      }
+
       const sha256 = await sha256File(sourcePath);
       const extension = extensionFor(effectiveMime, session.file.name);
       const originalId = randomUUID();
@@ -310,7 +335,7 @@ export class UploadFinalizer {
     context: Record<string, unknown> | undefined,
     principal?: unknown,
   ): Promise<UploadSessionRecord> {
-    const session = await this.options.store.get(sessionId);
+    let session = await this.options.store.get(sessionId);
     if (!session) {
       throw new UploadError('not_found', 'The upload session does not exist.');
     }
@@ -321,67 +346,84 @@ export class UploadFinalizer {
       throw new UploadError('invalid_request', 'Only staged uploads can be committed.');
     }
 
-    const files: UploadFileRecord[] = [];
-    for (const file of session.files) {
-      if (!file.storageKey.includes(`${path.sep}staging${path.sep}`)) {
-        files.push(file);
-        continue;
-      }
-      const extension = extensionFor(file.mime, file.name);
-      const finalKey = this.options.storage.finalPath(session.scope, file.id, file.role, extension);
-      await this.options.storage.move(file.storageKey, finalKey);
-      files.push({ ...file, storageKey: finalKey });
-    }
-
-    await this.options.store.update(sessionId, { files });
-    const processor = this.options.processors[session.purpose];
-    if (processor && !files.some((file) => file.role !== 'original')) {
-      const original = files.find((file) => file.role === 'original');
-      if (original) {
-        files.push(
-          ...(await processor.process({
-            session,
-            fileId: original.id,
-            sourcePath: original.storageKey,
-            detectedMime: original.mime,
-            extension: extensionFor(original.mime, original.name),
-            scope: session.scope,
-            storage: this.options.storage,
-          })),
-        );
-      }
-    }
-
-    const updated = await this.options.store.update(sessionId, {
-      status: 'committed',
-      files,
-      clientKey: undefined,
-      completedAt: new Date().toISOString(),
-      result: {
-        files: files.map(({ storageKey: _storageKey, ...file }) => file),
-      },
+    const claimed = await this.options.store.updateIfStatus(sessionId, ['staged'], {
+      status: 'processing',
     });
-    if (!updated) {
-      throw new UploadError('internal_error', 'The session disappeared during commit.');
+    if (!claimed) {
+      const current = await this.options.store.get(sessionId);
+      if (current) {
+        return current;
+      }
+      throw new UploadError('not_found', 'The upload session does not exist.');
     }
+    session = claimed;
 
-    if (this.options.onCommitted) {
-      const callbackResult = await this.options.onCommitted({
-        session: updated,
-        files,
-        context,
-        principal,
-      } satisfies CommittedUploadContext);
-      if (callbackResult?.externalId) {
-        const withExternalId = await this.options.store.update(sessionId, {
-          result: { ...(updated.result ?? { files: [] }), externalId: callbackResult.externalId },
-        });
-        if (withExternalId) {
-          return withExternalId;
+    const files: UploadFileRecord[] = [];
+    try {
+      for (const file of session.files) {
+        if (!file.storageKey.includes(`${path.sep}staging${path.sep}`)) {
+          files.push(file);
+          continue;
+        }
+        const extension = extensionFor(file.mime, file.name);
+        const finalKey = this.options.storage.finalPath(
+          session.scope,
+          file.id,
+          file.role,
+          extension,
+        );
+        await this.options.storage.move(file.storageKey, finalKey);
+        files.push({ ...file, storageKey: finalKey });
+      }
+
+      await this.options.store.update(sessionId, { files });
+      const processor = this.options.processors[session.purpose];
+      if (processor && !files.some((file) => file.role !== 'original')) {
+        const original = files.find((file) => file.role === 'original');
+        if (original) {
+          files.push(
+            ...(await processor.process({
+              session,
+              fileId: original.id,
+              sourcePath: original.storageKey,
+              detectedMime: original.mime,
+              extension: extensionFor(original.mime, original.name),
+              scope: session.scope,
+              storage: this.options.storage,
+            })),
+          );
         }
       }
+
+      let externalId: string | undefined;
+      if (this.options.onCommitted) {
+        const callbackResult = await this.options.onCommitted({
+          session,
+          files,
+          context,
+          principal,
+        } satisfies CommittedUploadContext);
+        externalId = callbackResult?.externalId;
+      }
+
+      const updated = await this.options.store.update(sessionId, {
+        status: 'committed',
+        files,
+        clientKey: undefined,
+        completedAt: new Date().toISOString(),
+        result: {
+          files: files.map(({ storageKey: _storageKey, ...file }) => file),
+          ...(externalId ? { externalId } : {}),
+        },
+      });
+      if (!updated) {
+        throw new UploadError('internal_error', 'The session disappeared during commit.');
+      }
+      return updated;
+    } catch (error) {
+      await this.options.store.update(sessionId, { status: 'staged', files });
+      throw error instanceof UploadError ? error : toUploadError(error, 'processing_failed');
     }
-    return updated;
   }
 
   public async expire(sessionId: string): Promise<void> {

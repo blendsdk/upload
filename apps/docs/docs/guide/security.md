@@ -16,7 +16,20 @@ The server never trusts the browser MIME type:
 - documents are served as attachments by default;
 - file responses set `X-Content-Type-Options: nosniff` and a restrictive disposition.
 
-Add a malware scanner as an `UploadProcessor` before making a document available if your threat model requires it. Do not serve untrusted PDF or Office content inline from the application origin.
+Add a malware scanner before making a document available if your threat model requires it:
+
+```ts
+import { ClamAvScanner, uploadPlugin } from '@blendsdk/webafx-upload';
+
+app.use(
+  uploadPlugin({
+    ...options,
+    scanner: new ClamAvScanner({ host: '127.0.0.1', port: 3310 }),
+  }),
+);
+```
+
+The package ships the small clamd INSTREAM client, never the ClamAV engine. Infected files are rejected before the final move. Do not serve untrusted PDF or Office content inline from the application origin.
 
 ## Access control
 

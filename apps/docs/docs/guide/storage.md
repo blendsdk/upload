@@ -18,9 +18,22 @@ const storage = new LocalUploadStorage('/srv/uploads');
 
 The scope hash is derived from the opaque application scope. A tenant or workspace name never becomes a path component.
 
-## Object storage
+## S3 object storage
 
-`UploadStorage` is the integration boundary. Implement it for S3, R2 or another object store, or use a tus S3 store in a custom deployment. The finalizer only needs `move`, `stat`, `readStream`, `write`, `exists` and `delete`.
+```ts
+import { createS3UploadStorage, uploadPlugin } from '@blendsdk/webafx-upload';
+
+const storage = await createS3UploadStorage({
+  bucket: process.env.S3_BUCKET!,
+  prefix: 'blendsdk/upload',
+  localRoot: '/srv/upload-staging',
+  clientConfig: { region: process.env.AWS_REGION },
+});
+
+app.use(uploadPlugin({ ...options, storage }));
+```
+
+tus keeps writing to the local `localRoot/tus` staging directory. Finalized originals and variants are uploaded to the bucket; `UploadStorage` remains the integration boundary for other object stores. Install the optional `@aws-sdk/client-s3` peer only when using this adapter.
 
 ## Persistence
 
