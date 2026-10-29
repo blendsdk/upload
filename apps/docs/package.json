@@ -1,0 +1,16 @@
+{
+  "name": "@blendsdk/upload-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "User documentation for BlendSDK Upload",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "clean": "rm -fR docs/.vitepress/dist docs/.vitepress/cache"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

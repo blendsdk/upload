@@ -1,0 +1,178 @@
+name: Release — Publish Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump (auto analyzes conventional commits)'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+      dist_tag:
+        description: 'npm dist-tag'
+        required: true
+        default: 'latest'
+        type: choice
+        options:
+          - latest
+          - next
+          - beta
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: blendsdk-upload-release
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    steps:
+      - name: latest requires main
+        if: inputs.dist_tag == 'latest' && github.ref != 'refs/heads/main'
+        run: |
+          echo "Publishing with 'latest' is only allowed from main."
+          echo "Current ref: ${{ github.ref }}"
+          exit 1
+
+  build_test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify
+        run: pnpm verify
+
+      - name: Bundle verified packages
+        run: |
+          tar -czf "$RUNNER_TEMP/upload-dist.tgz" \
+            packages/upload-core/dist \
+            packages/upload-client/dist \
+            packages/webafx-upload/dist \
+            packages/fluentui-upload/dist
+
+      - name: Upload verified artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-dist
+          path: ${{ runner.temp }}/upload-dist.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    name: Version and publish
+    runs-on: ubuntu-latest
+    needs: [build_test]
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Install Node.js for trusted publishing
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install npm for trusted publishing
+        run: npm install --global npm@^11.15.0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download verified artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: upload-dist
+          path: ${{ runner.temp }}/upload-dist
+
+      - name: Restore verified artifacts
+        run: |
+          tar -xzf "$RUNNER_TEMP/upload-dist/upload-dist.tgz" -C "$GITHUB_WORKSPACE"
+          test -f packages/upload-core/dist/index.js
+          test -f packages/upload-client/dist/index.js
+          test -f packages/webafx-upload/dist/index.js
+          test -f packages/fluentui-upload/dist/index.js
+
+      - name: Version packages
+        run: |
+          pnpm exec lockstep version \
+            --type ${{ inputs.version_type }} \
+            --ci \
+            --no-git-commit \
+            --fail-on-no-changes
+
+      - name: Generate changelog
+        if: inputs.dist_tag == 'latest'
+        continue-on-error: true
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LOCKSTEP_OPENAI_MODEL: ${{ secrets.LOCKSTEP_OPENAI_MODEL }}
+          LOCKSTEP_ANTHROPIC_MODEL: ${{ secrets.LOCKSTEP_ANTHROPIC_MODEL }}
+        run: pnpm exec lockstep changelog
+
+      - name: Commit and annotate tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          git add .
+          git commit -m "chore(release): v${VERSION} [skip ci]"
+          git tag -a "v${VERSION}" -m "v${VERSION}"
+
+      - name: Publish
+        env:
+          NPM_CONFIG_IGNORE_SCRIPTS: 'true'
+        run: |
+          TAG="${{ inputs.dist_tag }}"
+          MODE="--tag-mode branch"
+          if [ "$TAG" != "latest" ]; then
+            MODE="--tag-mode exact"
+          fi
+          pnpm exec lockstep publish \
+            --tag "$TAG" \
+            $MODE \
+            --preflight \
+            --provenance
+
+      - name: Push release commit and tags
+        run: |
+          git push
+          git push --tags

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+.opencode/
+pnpm-lock.yaml
+apps/docs/docs/.vitepress/dist/
+apps/docs/docs/.vitepress/cache/
+apps/example/dist/
