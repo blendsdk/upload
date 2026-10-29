@@ -14,3 +14,6 @@ apps/example/dist/
 .DS_Store
 .idea/
 .vscode/
+
+playwright-report/
+test-results/
