@@ -23,4 +23,4 @@
 
 ## Notes
 
-- `v0.1.0` is published to npm and tagged `v0.1.0`. The documentation site is live at https://blendsdk.github.io/upload/.
+- `v0.1.0` and `v0.2.0` are published to npm and tagged. `v0.2.0` adds S3 storage, Redis locking, malware scanning, HEIC decoding, browser E2E and commit concurrency. The documentation site is live at https://blendsdk.github.io/upload/.

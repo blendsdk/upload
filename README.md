@@ -19,7 +19,7 @@ pnpm add @blendsdk/webafx-upload
 pnpm add @blendsdk/fluentui-upload
 ```
 
-The packages are published at `0.1.0` under the `@blendsdk` scope.
+The packages are published at `0.2.0` under the `@blendsdk` scope.
 
 ## Requirements
 

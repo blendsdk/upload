@@ -17,3 +17,7 @@
 | RD-04 | Malware scanning     | [RD-04](requirements/RD-04-malware-scanning.md)   | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
 | RD-05 | HEIC decoding        | [RD-05](requirements/RD-05-heic-decoding.md)      | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
 | RD-06 | Commit concurrency   | [RD-06](requirements/RD-06-commit-concurrency.md) | [plan](plans/upload-hardening/00-index.md) | Done  | ✅     |
+
+## Notes
+
+- Released as `v0.2.0` on 2026-10-29, including S3 storage, Redis locking, malware scanning, HEIC decoding, browser E2E and commit concurrency.
