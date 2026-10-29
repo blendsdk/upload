@@ -171,5 +171,5 @@ jobs:
 
       - name: Push release commit and tags
         run: |
-          git push
-          git push --tags
+          git push origin HEAD:main
+          git push origin --tags
