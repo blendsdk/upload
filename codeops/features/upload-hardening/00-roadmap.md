@@ -21,3 +21,4 @@
 ## Notes
 
 - Released as `v0.2.0` on 2026-10-29, including S3 storage, Redis locking, malware scanning, HEIC decoding, browser E2E and commit concurrency.
+- `v0.2.1` moves the optional S3 adapter to `@blendsdk/webafx-upload/s3`, keeping root types independent of the AWS SDK.
