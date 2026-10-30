@@ -1,6 +1,6 @@
 {
   "name": "@blendsdk/upload-monorepo",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "description": "Resumable file upload system for BlendSDK v5, React 19 and Fluent UI v9",

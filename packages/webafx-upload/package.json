@@ -1,6 +1,6 @@
 {
   "name": "@blendsdk/webafx-upload",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "WebAFX v5 upload session API, tus transport and finalization pipeline",
   "type": "module",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "clean": "rm -fR ./dist"
   },
   "dependencies": {
-    "@blendsdk/upload-core": "^0.2.1",
+    "@blendsdk/upload-core": "^0.2.2",
     "@tus/file-store": "^2.1.1",
     "@tus/server": "^2.4.6",
     "@types/express": "^5.0.6",

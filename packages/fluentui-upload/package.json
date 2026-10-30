@@ -1,6 +1,6 @@
 {
   "name": "@blendsdk/fluentui-upload",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Fluent UI v9 upload component for React 19",
   "type": "module",
   "license": "MIT",
@@ -23,8 +23,8 @@
     "clean": "rm -fR ./dist"
   },
   "dependencies": {
-    "@blendsdk/upload-client": "^0.2.1",
-    "@blendsdk/upload-core": "^0.2.1",
+    "@blendsdk/upload-client": "^0.2.2",
+    "@blendsdk/upload-core": "^0.2.2",
     "react-dropzone": "^20.1.4"
   },
   "peerDependencies": {

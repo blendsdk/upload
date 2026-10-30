@@ -1,6 +1,6 @@
 {
   "name": "@blendsdk/upload-core",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Shared protocol, schemas, validation and state types for BlendSDK upload",
   "type": "module",
   "license": "MIT",
