@@ -16,3 +16,4 @@
 - `pnpm verify`: pass
 - Browser check: image upload/commit, document upload, file download
 - S3 mode: image commit and file download through S3Mock
+- `pnpm test:playground`: pass against real tus

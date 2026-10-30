@@ -3,7 +3,7 @@
 > **Feature**: Local full-stack playground
 > **Status**: Done
 > **Created**: 2026-10-30
-> **Implements**: upload-playground/RD-01
+> **Implements**: upload-playground/RD-01, upload-playground/RD-02
 > **CodeOps Artifact Schema**: 1
 
 ## Overview

@@ -21,9 +21,10 @@
 
 - Install exactly from the lockfile: `pnpm install --frozen-lockfile`.
 - Full gate: `pnpm verify` (format, type-check, build, tests, docs build, pack check).
-- Focused gates: `pnpm type-check`, `pnpm build`, `pnpm test`, `pnpm test:e2e`, `pnpm test:s3`, `pnpm docs:build`, `pnpm pack:check`.
+- Focused gates: `pnpm type-check`, `pnpm build`, `pnpm test`, `pnpm test:e2e`, `pnpm test:playground`, `pnpm test:s3`, `pnpm docs:build`, `pnpm pack:check`.
 - `pnpm test:s3` requires Docker, starts Adobe S3Mock from `compose.yaml`, and runs the S3 storage contract test; stop it with `pnpm s3:down`.
 - `pnpm test:e2e` builds the workspace, starts the Vite example, and runs Playwright against Chromium. CI runs it as a separate job.
+- `pnpm test:playground` builds the workspace, starts the full-stack playground, and tests real tus upload, image commit and document finalization.
 - Full-stack playground: `pnpm playground` (builds, starts the WebAFX server and Vite on ports 3001 and 5174).
 - One package: `pnpm --filter <package-name> <script>`.
 - Docs workbench: `pnpm docs:dev`.

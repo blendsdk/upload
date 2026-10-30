@@ -15,7 +15,11 @@ The command builds the workspace, then starts:
 | WebAFX server | `http://127.0.0.1:3001` | JSON API, tus and file serving     |
 | Vite          | `http://127.0.0.1:5174` | Fluent UI client with `/api` proxy |
 
-Open `http://127.0.0.1:5174`.
+Open `http://127.0.0.1:5174`. The automated check is:
+
+```bash
+pnpm test:playground
+```
 
 ## What to try
 
