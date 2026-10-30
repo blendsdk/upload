@@ -19,12 +19,17 @@ export default defineConfig({
       url: 'http://127.0.0.1:3001/api/uploads/policy/playground.image',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      env: { PORT: '3001' },
+      stdout: 'pipe',
+      stderr: 'pipe',
     },
     {
       command: 'pnpm --filter @blendsdk/upload-playground dev:web',
       url: 'http://127.0.0.1:5174',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
     },
   ],
 });
