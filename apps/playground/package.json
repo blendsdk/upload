@@ -20,7 +20,7 @@
     "@blendsdk/upload-core": "^0.2.1",
     "@blendsdk/webafx-upload": "^0.2.1",
     "@fluentui/react-components": "^9.75.0",
-    "blendsdk": "^5.67.0",
+    "blendsdk": "^5.68.0",
     "express": "^5.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

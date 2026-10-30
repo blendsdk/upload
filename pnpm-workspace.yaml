@@ -27,3 +27,4 @@ minimumReleaseAgeExclude:
   - '@aws-sdk/signature-v4-multi-region@3.996.50'
   - '@aws-sdk/token-providers@3.1159.0'
   - '@aws-sdk/xml-builder@3.972.42'
+  - blendsdk@5.68.0
