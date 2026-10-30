@@ -16,7 +16,7 @@
     "test": "turbo run test --concurrency=4",
     "test:e2e": "pnpm build && playwright test",
     "playground": "pnpm build && pnpm --filter @blendsdk/upload-playground dev",
-    "test:s3": "pnpm s3:up && pnpm --filter @blendsdk/webafx-upload test:s3",
+    "test:s3": "pnpm build && pnpm s3:up && pnpm --filter @blendsdk/webafx-upload test:s3",
     "s3:up": "docker compose up -d --wait s3mock",
     "s3:down": "docker compose down -v",
     "type-check": "turbo run type-check",
