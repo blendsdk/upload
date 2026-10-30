@@ -23,5 +23,6 @@
 - Browser E2E: 1 pass (Chromium)
 - S3 contract test: 2 pass against Adobe S3Mock
 - Expired-record retention regression test: pass
+- Postgres/Redis integration: 5 pass
 - `pnpm docs:build`: pass
 - `pack:check`: pass

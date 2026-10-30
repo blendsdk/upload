@@ -13,6 +13,17 @@ Sessions carry `expiresAt`. `UploadStore.listExpired(now)` returns sessions that
 
 The tus `FileStore` also has an expiration period; configure it consistently with `sessionTtlSeconds` and `stagedTtlSeconds`.
 
+## Local integration tests
+
+`compose.yaml` includes Postgres 17 and Redis 7 for live adapter checks:
+
+```bash
+pnpm test:infra
+pnpm infra:down
+```
+
+The suite applies the migration SQL, exercises the Postgres store and retention purge query, and verifies Redis lock acquisition, contention and token-safe release. It requires Docker and does not run as part of the default `pnpm test`.
+
 ## Multi-instance deployments
 
 The default tus locker is in-memory. For more than one instance, provide a shared `Locker` through `tusLocker`:

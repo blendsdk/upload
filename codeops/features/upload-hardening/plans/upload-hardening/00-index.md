@@ -3,7 +3,7 @@
 > **Feature**: Remaining production hardening for the upload package family
 > **Status**: Done
 > **Created**: 2026-10-29
-> **Implements**: upload-hardening/RD-01 through upload-hardening/RD-08
+> **Implements**: upload-hardening/RD-01 through upload-hardening/RD-09
 > **CodeOps Artifact Schema**: 1
 
 ## Overview

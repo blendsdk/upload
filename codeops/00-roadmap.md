@@ -14,7 +14,7 @@
 | Feature           | Roadmap                                       | Stage Summary            | Progress | Status | Last Updated |
 | ----------------- | --------------------------------------------- | ------------------------ | -------- | ------ | ------------ |
 | upload-system     | [→](features/upload-system/00-roadmap.md)     | 1 plan done · 6 RDs done | 6/6 RDs  | ✅     | 2026-10-29   |
-| upload-hardening  | [→](features/upload-hardening/00-roadmap.md)  | 1 plan done · 8 RDs done | 8/8 RDs  | ✅     | 2026-10-30   |
+| upload-hardening  | [→](features/upload-hardening/00-roadmap.md)  | 1 plan done · 9 RDs done | 9/9 RDs  | ✅     | 2026-10-30   |
 | upload-playground | [→](features/upload-playground/00-roadmap.md) | 1 plan done · 2 RDs done | 2/2 RDs  | ✅     | 2026-10-30   |
 
 ## Archived

@@ -42,4 +42,5 @@ findings. The release-blocking items were fixed and covered where practical.
 ## Resolved after the first release
 
 - Browser E2E, S3 storage, Redis locking, malware scanning, HEIC decoding and cross-instance commit handling were delivered in `v0.2.0`/`v0.2.1`.
-- Expired-record retention deletion was delivered with the `upload-hardening` RD-08 work and is part of the next patch release.
+- Expired-record retention deletion was delivered with the `upload-hardening` RD-08 work and is part of `v0.2.2`.
+- Live Postgres store and Redis locker coverage was added with `upload-hardening` RD-09.

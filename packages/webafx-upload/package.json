@@ -25,6 +25,7 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:s3": "S3_INTEGRATION=1 vitest run test/s3-storage.integration.test.ts",
+    "test:infra": "INFRA_INTEGRATION=1 vitest run test/postgres-redis.integration.test.ts",
     "clean": "rm -fR ./dist"
   },
   "dependencies": {
@@ -37,11 +38,11 @@
     "sharp": "^0.35.5"
   },
   "peerDependencies": {
+    "@aws-sdk/client-s3": "^3.1159.0",
     "blendsdk": ">=5.66.0 <6.0.0",
     "express": "^5.0.0",
     "heic-convert": "^2.1.0",
-    "zod": "^4.4.3",
-    "@aws-sdk/client-s3": "^3.1159.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1159.0",

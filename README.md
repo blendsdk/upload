@@ -43,12 +43,15 @@ pnpm verify
 pnpm test:e2e
 pnpm test:playground
 pnpm test:s3
+pnpm test:infra
 pnpm playground
 ```
 
 `pnpm playground` builds the workspace and starts the full-stack playground: a real WebAFX upload server on `http://127.0.0.1:3001` and a Fluent UI client on `http://127.0.0.1:5174`.
 
 `pnpm test:playground` runs Playwright against the full-stack playground on ports 3001 and 5174.
+
+`pnpm test:infra` starts Postgres and Redis from `compose.yaml`, runs the store and locker integration tests, and leaves the services running; stop them with `pnpm infra:down`.
 
 `pnpm test:s3` requires Docker and uses Adobe S3Mock from `compose.yaml`. It starts the container, runs the S3 storage contract test, and leaves the container running; stop it with `pnpm s3:down`.
 
