@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { mkdir, rm, stat } from 'node:fs/promises';
+import { copyFile, mkdir, rename, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
@@ -84,15 +84,24 @@ export class S3UploadStorage implements UploadStorage {
   }
 
   public async move(from: string, to: string): Promise<void> {
+    if (!to.startsWith('s3://')) {
+      await this.moveLocal(from, to);
+      return;
+    }
     const key = this.keyOf(to);
+    const body = from.startsWith('s3://') ? await this.openS3Stream(from) : createReadStream(from);
     await this.options.client.send(
       new this.options.sdk.PutObjectCommand({
         Bucket: this.options.bucket,
         Key: key,
-        Body: createReadStream(from),
+        Body: body,
       }),
     );
-    await rm(from, { force: true });
+    if (from.startsWith('s3://')) {
+      await this.delete(from);
+    } else {
+      await rm(from, { force: true });
+    }
   }
 
   public async write(filePath: string, data: Uint8Array): Promise<void> {
@@ -170,6 +179,19 @@ export class S3UploadStorage implements UploadStorage {
       throw new Error('S3 returned an empty or unsupported response body.');
     }
     return body as Readable;
+  }
+
+  private async moveLocal(from: string, to: string): Promise<void> {
+    await mkdir(path.dirname(to), { recursive: true, mode: 0o700 });
+    try {
+      await rename(from, to);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EXDEV') {
+        throw error;
+      }
+      await copyFile(from, to);
+      await rm(from, { force: true });
+    }
   }
 
   private keyOf(filePath: string): string {

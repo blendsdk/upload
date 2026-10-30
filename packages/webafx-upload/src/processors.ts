@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { createWriteStream } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { UploadError } from '@blendsdk/upload-core';
@@ -28,29 +30,50 @@ export class SharpImageProcessor implements UploadProcessor {
       throw new UploadError('invalid_content', 'The file is not a decodable image.');
     }
 
-    let sourcePath = context.sourcePath;
-    let temporaryDirectory: string | undefined;
     const isHeic = context.detectedMime === 'image/heic' || context.detectedMime === 'image/heif';
-    if (isHeic) {
-      if (!this.heicDecoder) {
-        throw new UploadError('invalid_content', 'HEIC decoding is not configured on this server.');
-      }
-      try {
-        const decoded = await this.heicDecoder.decode(await readFile(sourcePath));
-        temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'blendsdk-heic-'));
-        sourcePath = path.join(temporaryDirectory, 'converted.jpg');
-        await writeFile(sourcePath, decoded);
-      } catch (error) {
-        throw new UploadError(
-          'invalid_content',
-          error instanceof Error ? error.message : 'The HEIC image could not be decoded.',
-        );
-      }
+    if (isHeic && !this.heicDecoder) {
+      throw new UploadError('invalid_content', 'HEIC decoding is not configured on this server.');
     }
 
+    let sourcePath = context.sourcePath;
+    let temporaryDirectory: string | undefined;
     try {
+      if (sourcePath.startsWith('s3://')) {
+        temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'blendsdk-image-'));
+        const localSource = path.join(
+          temporaryDirectory,
+          `source${path.extname(sourcePath) || '.bin'}`,
+        );
+        try {
+          const stream = await context.storage.readStream(sourcePath);
+          await pipeline(stream, createWriteStream(localSource, { mode: 0o600 }));
+        } catch (error) {
+          throw new UploadError(
+            'processing_failed',
+            'The stored image could not be read.',
+            'retryable',
+            { readError: error instanceof Error ? error.message : String(error) },
+          );
+        }
+        sourcePath = localSource;
+      }
+
+      if (isHeic) {
+        try {
+          const decoded = await this.heicDecoder!.decode(await readFile(sourcePath));
+          temporaryDirectory ??= await mkdtemp(path.join(tmpdir(), 'blendsdk-heic-'));
+          sourcePath = path.join(temporaryDirectory, 'converted.jpg');
+          await writeFile(sourcePath, decoded);
+        } catch (error) {
+          throw new UploadError(
+            'invalid_content',
+            error instanceof Error ? error.message : 'The HEIC image could not be decoded.',
+          );
+        }
+      }
+
       const constraints = context.session.constraints;
-      const pipeline = sharp(sourcePath, {
+      const image = sharp(sourcePath, {
         limitInputPixels: constraints.maxPixels ?? 50_000_000,
         sequentialRead: true,
         failOn: 'warning',
@@ -58,12 +81,9 @@ export class SharpImageProcessor implements UploadProcessor {
 
       let metadata: Metadata;
       try {
-        metadata = await pipeline.metadata();
+        metadata = await image.metadata();
       } catch {
-        throw new UploadError(
-          'invalid_content',
-          'The image could not be decoded. HEIC files require a server decoder.',
-        );
+        throw new UploadError('invalid_content', 'The image could not be decoded.');
       }
 
       const width = metadata.width ?? 0;
