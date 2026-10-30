@@ -185,6 +185,15 @@ export class PostgresUploadStore implements UploadStore {
     return result.rows.map((row) => row.record);
   }
 
+  public async listPurgeable(before: Date): Promise<UploadSessionRecord[]> {
+    const result = await this.query<{ record: UploadSessionRecord }>(
+      `SELECT record FROM ${this.table}
+       WHERE status = 'expired' AND expires_at <= $1`,
+      [before.toISOString()],
+    );
+    return result.rows.map((row) => row.record);
+  }
+
   public async delete(id: string): Promise<void> {
     await this.query(`DELETE FROM ${this.table} WHERE id = $1`, [id]);
   }

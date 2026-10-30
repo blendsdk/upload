@@ -130,7 +130,9 @@ export function uploadPlugin(options: UploadServerOptions): PluginDefinition {
       app.registerController(basePath, UploadSessionController);
       app.registerController(`${basePath}/files`, UploadFileController);
 
-      const maintenance = new UploadMaintenance(store, finalizer, uploadLogger);
+      const maintenance = new UploadMaintenance(store, finalizer, uploadLogger, {
+        expiredRecordRetentionDays: options.expiredRecordRetentionDays,
+      });
       const cleanupIntervalMs = options.cleanupIntervalMs ?? 15 * 60 * 1000;
       let cleaning = false;
       const runCleanup = async (): Promise<void> => {

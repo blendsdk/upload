@@ -128,6 +128,8 @@ export interface UploadStore {
     fileId: string,
   ): Promise<{ session: UploadSessionRecord; file: UploadFileRecord } | undefined>;
   listExpired(now: Date): Promise<UploadSessionRecord[]>;
+  /** Optional: expired records whose retention window has elapsed. */
+  listPurgeable?(before: Date): Promise<UploadSessionRecord[]>;
   delete(id: string): Promise<void>;
 }
 
@@ -153,6 +155,7 @@ export interface UploadServerOptions {
   maxTusSize?: number;
   maxActiveSessions?: number;
   cleanupIntervalMs?: number;
+  expiredRecordRetentionDays?: number;
   tusLocker?: Locker;
   scanner?: ContentScanner;
   heicDecoder?: HeicDecoder;

@@ -14,12 +14,14 @@
 | T-07 | Update docs and CI                        | ✅     |
 | T-08 | Run full verification and release         | ✅     |
 | T-09 | Add local S3Mock contract test and CI job | ✅     |
+| T-10 | Add expired-record retention deletion     | ✅     |
 
 ## Verification
 
 - `pnpm verify`: pass
 - Unit/integration tests: 36 pass
 - Browser E2E: 1 pass (Chromium)
-- S3 contract test: 1 pass against Adobe S3Mock
+- S3 contract test: 2 pass against Adobe S3Mock
+- Expired-record retention regression test: pass
 - `pnpm docs:build`: pass
 - `pack:check`: pass

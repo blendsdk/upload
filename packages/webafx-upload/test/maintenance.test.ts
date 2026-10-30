@@ -60,6 +60,53 @@ describe('UploadMaintenance', () => {
     expect((await store.get(id))?.status).toBe('expired');
   });
 
+  it('purges expired session records after the retention window', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'blendsdk-upload-purge-'));
+    roots.push(root);
+    const storage = new LocalUploadStorage(root);
+    const store = new MemoryUploadStore();
+    const id = 'bf14e45f-ceea-4f6a-9f7a-0f2a1b3c4d5e';
+    const source = path.join(root, 'source.txt');
+    await writeFile(source, 'hello');
+    const record: UploadSessionRecord = {
+      id,
+      purpose: 'test.document',
+      status: 'uploaded',
+      file: { name: 'note.txt', size: 5, type: 'text/plain' },
+      bytesUploaded: 5,
+      bytesTotal: 5,
+      createdAt: new Date(Date.now() - 120_000).toISOString(),
+      expiresAt: new Date(Date.now() - 60_000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      context: {},
+      constraints: { accept: ['text/plain'], maxSize: 100, maxFiles: 1 },
+      commitMode: 'deferred',
+      contentDisposition: 'attachment',
+      tusUploadId: 'tus-1',
+      files: [],
+    };
+    await store.create(record);
+    const finalizer = new UploadFinalizer({
+      store,
+      storage,
+      policies: {
+        'test.document': {
+          purpose: 'test.document',
+          commitMode: 'deferred',
+          constraints: record.constraints,
+        },
+      },
+      processors: {},
+      resolveUploadPath: async () => source,
+    });
+    await finalizer.finalize(id);
+    const maintenance = new UploadMaintenance(store, finalizer, undefined, {
+      expiredRecordRetentionDays: 0,
+    });
+    expect(await maintenance.cleanup()).toBe(1);
+    expect(await store.get(id)).toBeUndefined();
+  });
+
   it('keeps a ready immediate upload after its staging expiry', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'blendsdk-upload-ready-'));
     roots.push(root);

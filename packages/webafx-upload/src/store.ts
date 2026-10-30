@@ -136,6 +136,14 @@ export class MemoryUploadStore implements UploadStore {
       .map(cloneRecord);
   }
 
+  public async listPurgeable(before: Date): Promise<UploadSessionRecord[]> {
+    return [...this.records.values()]
+      .filter(
+        (record) => record.status === 'expired' && Date.parse(record.expiresAt) <= before.getTime(),
+      )
+      .map(cloneRecord);
+  }
+
   public async delete(id: string): Promise<void> {
     this.records.delete(id);
   }

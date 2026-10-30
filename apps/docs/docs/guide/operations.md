@@ -2,12 +2,14 @@
 
 ## Expiry
 
-Sessions carry `expiresAt`. `UploadStore.listExpired(now)` returns sessions that should be cleaned up. Run a scheduled job in the application (or a dedicated worker) that:
+Sessions carry `expiresAt`. `UploadStore.listExpired(now)` returns sessions that should be cleaned up. `UploadMaintenance.cleanup()`:
 
 1. loads expired sessions;
-2. deletes their files through `UploadFinalizer.delete`;
-3. marks them expired;
-4. logs the cleanup count.
+2. deletes their files and marks them expired through `UploadFinalizer.expire`;
+3. deletes expired session records after `expiredRecordRetentionDays` (default 30) through `UploadStore.listPurgeable`;
+4. logs the cleanup counts.
+
+`expiredRecordRetentionDays` is a plugin option. Setting it to `0` purges records on the next cleanup after expiry. Stores that do not implement the optional `listPurgeable` method keep expired records indefinitely, so a custom production store should implement it.
 
 The tus `FileStore` also has an expiration period; configure it consistently with `sessionTtlSeconds` and `stagedTtlSeconds`.
 

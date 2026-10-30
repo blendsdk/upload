@@ -38,3 +38,8 @@ findings. The release-blocking items were fixed and covered where practical.
 - Malware scanner adapter.
 - HEIC server decoder.
 - Retention-based deletion of expired session records; expiry currently clears file bytes and marks the record.
+
+## Resolved after the first release
+
+- Browser E2E, S3 storage, Redis locking, malware scanning, HEIC decoding and cross-instance commit handling were delivered in `v0.2.0`/`v0.2.1`.
+- Expired-record retention deletion was delivered with the `upload-hardening` RD-08 work and is part of the next patch release.
