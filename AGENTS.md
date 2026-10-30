@@ -14,7 +14,7 @@
 - `packages/upload-client/` — framework-agnostic manager, queue, retry, resume and tus transport.
 - `packages/webafx-upload/` — WebAFX v5 plugin, session/file controllers, tus server, storage, finalization, Postgres adapter and maintenance.
 - `packages/fluentui-upload/` — React 19 / Fluent UI v9 `FileUpload` component.
-- `apps/example/` — Vite demo; `apps/docs/` — VitePress user documentation.
+- `apps/example/` — deterministic Vite demo; `apps/playground/` — full-stack WebAFX + Fluent UI playground; `apps/docs/` — VitePress user documentation.
 - `codeops/` — CodeOps artifacts. Feature work lives under `codeops/features/<feature>/`.
 
 ## Commands
@@ -24,6 +24,7 @@
 - Focused gates: `pnpm type-check`, `pnpm build`, `pnpm test`, `pnpm test:e2e`, `pnpm test:s3`, `pnpm docs:build`, `pnpm pack:check`.
 - `pnpm test:s3` requires Docker, starts Adobe S3Mock from `compose.yaml`, and runs the S3 storage contract test; stop it with `pnpm s3:down`.
 - `pnpm test:e2e` builds the workspace, starts the Vite example, and runs Playwright against Chromium. CI runs it as a separate job.
+- Full-stack playground: `pnpm playground` (builds, starts the WebAFX server and Vite on ports 3001 and 5174).
 - One package: `pnpm --filter <package-name> <script>`.
 - Docs workbench: `pnpm docs:dev`.
 

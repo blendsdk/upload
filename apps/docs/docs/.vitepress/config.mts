@@ -20,6 +20,7 @@ export default defineConfig({
           text: 'Guide',
           items: [
             { text: 'Getting started', link: '/guide/getting-started' },
+            { text: 'Full-stack playground', link: '/guide/playground' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Server setup', link: '/guide/server' },
             { text: 'Client setup', link: '/guide/client' },

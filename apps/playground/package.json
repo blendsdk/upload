@@ -1,0 +1,40 @@
+{
+  "name": "@blendsdk/upload-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Full-stack local playground with a real WebAFX upload server and Fluent UI client",
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c blue,green \"pnpm dev:server\" \"pnpm dev:web\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:web": "wait-on http-get://127.0.0.1:3001/api/uploads/policy/playground.image && vite --port 5174",
+    "build": "vite build",
+    "preview": "vite preview --port 5174",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -fR dist .data"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1159.0",
+    "@blendsdk/fluentui-upload": "^0.2.1",
+    "@blendsdk/upload-client": "^0.2.1",
+    "@blendsdk/upload-core": "^0.2.1",
+    "@blendsdk/webafx-upload": "^0.2.1",
+    "@fluentui/react-components": "^9.75.0",
+    "blendsdk": "^5.67.0",
+    "express": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "wait-on": "^8.0.4"
+  }
+}

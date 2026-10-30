@@ -15,5 +15,6 @@ apps/example/dist/
 .idea/
 .vscode/
 
+.data/
 playwright-report/
 test-results/
