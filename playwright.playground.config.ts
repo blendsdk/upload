@@ -13,10 +13,18 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
-    command: 'pnpm --filter @blendsdk/upload-playground dev',
-    url: 'http://127.0.0.1:5174',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: 'pnpm --filter @blendsdk/upload-playground dev:server',
+      url: 'http://127.0.0.1:3001/api/uploads/policy/playground.image',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: 'pnpm --filter @blendsdk/upload-playground dev:web',
+      url: 'http://127.0.0.1:5174',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 });
