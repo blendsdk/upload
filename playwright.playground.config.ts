@@ -15,7 +15,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: 'pnpm --filter @blendsdk/upload-playground dev:server',
+      command: 'pnpm --filter @blendsdk/upload-playground start:server',
       url: 'http://127.0.0.1:3001/api/uploads/policy/playground.image',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
