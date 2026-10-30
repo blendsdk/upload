@@ -24,4 +24,4 @@
 
 ## Notes
 
-- `v0.1.0`, `v0.2.0` and `v0.2.1` are published to npm and tagged. `v0.2.0` adds S3 storage, Redis locking, malware scanning, HEIC decoding, browser E2E and commit concurrency; `v0.2.1` isolates the optional S3 adapter behind its own subpath. The documentation site is live at https://blendsdk.github.io/upload/.
+- `v0.1.0`, `v0.2.0`, `v0.2.1` and `v0.2.2` are published to npm and tagged. `v0.2.0` added S3 storage, Redis locking, malware scanning, HEIC decoding, browser E2E and commit concurrency; `v0.2.1` isolated the optional S3 adapter behind its own subpath; `v0.2.2` added expired-record retention, S3 fixes and playground E2E. The documentation site is live at https://blendsdk.github.io/upload/.

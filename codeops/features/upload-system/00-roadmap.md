@@ -27,5 +27,5 @@
 - The project is greenfield; no CastingAppMT compatibility layer or migration is in scope.
 - All packages are versioned in lockstep with `@blendsdk/lockstep` 1.4.1.
 - The VitePress site deploys from `main` through GitHub Pages.
-- `v0.1.0` was published to npm on 2026-10-29; `v0.2.0` followed with the production hardening adapters; `v0.2.1` isolates the optional S3 adapter subpath. Packages: `@blendsdk/upload-core`, `@blendsdk/upload-client`, `@blendsdk/webafx-upload` and `@blendsdk/fluentui-upload`.
+- `v0.1.0` was published to npm on 2026-10-29; `v0.2.0` followed with the production hardening adapters; `v0.2.1` isolates the optional S3 adapter subpath; `v0.2.2` adds retention cleanup, S3 fixes and playground E2E. Packages: `@blendsdk/upload-core`, `@blendsdk/upload-client`, `@blendsdk/webafx-upload` and `@blendsdk/fluentui-upload`.
 - npm trusted publishing is configured for the `release.yml` workflow in `blendsdk/upload` for all four packages.

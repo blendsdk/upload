@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.2] - 2026-10-30
 
-### Changed
-- Version bump to 0.2.2
+### Added
+
+- Expired session records are purged after `expiredRecordRetentionDays` (default 30 days).
+
+### Fixed
+
+- S3 deferred staging supports local-to-local moves.
+- S3-backed images are downloaded before sharp processing.
 
 ## [0.2.1] - 2026-10-29
 
